@@ -1,0 +1,621 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Márgenes | YORKY CRM</title>
+  <link rel="stylesheet" href="./css/styles.css" />
+</head>
+<body>
+  <div class="brand-grain-bg" aria-hidden="true">
+    <div class="brand-grain-layer brand-grain-layer-one"></div>
+    <div class="brand-grain-layer brand-grain-layer-two"></div>
+    <div class="brand-grain-layer brand-grain-layer-three"></div>
+  </div>
+
+  <main class="dashboard-page page-enter">
+    <div class="dashboard-shell">
+      <header class="topbar page-enter-frag page-enter-frag-1">
+        <div class="brand-block">
+          <h1>Márgenes</h1>
+          <p>
+            Analiza el margen de ganancia por rangos de fecha, con el detalle de productos y servicios vendidos.
+          </p>
+        </div>
+
+        <div class="topbar-actions">
+          <a
+            href="./dashboard.html"
+            class="dashboard-icon-btn"
+            title="Volver al dashboard"
+            aria-label="Volver al dashboard"
+          >
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
+                 stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+              <rect x="2" y="3" width="20" height="14" rx="2"></rect>
+              <line x1="8" y1="21" x2="16" y2="21"></line>
+              <line x1="12" y1="17" x2="12" y2="21"></line>
+            </svg>
+          </a>
+
+          <button id="logoutBtn" class="danger-btn" type="button">Cerrar sesión</button>
+        </div>
+      </header>
+
+      <section class="dashboard-grid page-enter-frag page-enter-frag-2">
+        <article class="card wide-card dashboard-sales-card">
+          <div class="dashboard-panel-head">
+            <div>
+              <h2>Resumen de margen</h2>
+              <p>Selecciona el rango de fechas para ver ventas, costo y margen total.</p>
+            </div>
+          </div>
+
+          <div class="dashboard-filter-grid">
+            <label>
+              Desde
+              <input type="date" id="fechaMargenInicio" />
+            </label>
+
+            <label>
+              Hasta
+              <input type="date" id="fechaMargenFin" />
+            </label>
+
+            <div class="dashboard-filter-actions">
+              <button type="button" class="secondary-btn mini-btn" id="btnMargenHoy">Hoy</button>
+              <button type="button" class="secondary-btn mini-btn" id="btnMargenSemana">
+                Esta semana
+              </button>
+              <button type="button" class="secondary-btn mini-btn" id="btnMargenMes">
+                Este mes
+              </button>
+              <button type="button" class="secondary-btn mini-btn" id="btnMargen30">
+                Últimos 30 días
+              </button>
+              <button type="button" class="primary-btn" id="btnMargenAplicar">
+                Aplicar filtro
+              </button>
+            </div>
+          </div>
+
+          <div class="sales-summary-grid" style="margin-top:16px;">
+            <div class="sales-summary-box">
+              <span>Venta total</span>
+              <strong id="margenVentaTotalText">S/ 0.00</strong>
+            </div>
+            <div class="sales-summary-box">
+              <span>Costo total</span>
+              <strong id="margenCostoTotalText">S/ 0.00</strong>
+            </div>
+            <div class="sales-summary-box">
+              <span>Margen total</span>
+              <strong id="margenTotalText">S/ 0.00 (0%)</strong>
+            </div>
+          </div>
+        </article>
+
+        <article class="card full-card">
+          <div class="table-toolbar" style="align-items:flex-end; gap:14px; flex-wrap:wrap;">
+            <div>
+              <h2 style="margin-bottom:4px;">Detalle de productos y servicios</h2>
+              <p style="color:var(--muted);">
+                Aquí solo aparecen ítems que realmente cuentan para margen.
+              </p>
+            </div>
+
+            <div style="display:flex; gap:10px; flex-wrap:wrap; justify-content:flex-end;">
+              <input
+                type="text"
+                id="searchMargenInput"
+                class="search-input"
+                placeholder="Buscar por cliente, producto, servicio..."
+                style="max-width:320px;"
+              />
+
+              <button
+                type="button"
+                class="secondary-btn"
+                id="exportMargenCsvBtn"
+              >
+                Exportar CSV
+              </button>
+            </div>
+          </div>
+
+          <div class="table-wrap">
+            <table>
+              <thead>
+                <tr>
+                  <th>Fecha/Hora</th>
+                  <th>Cliente</th>
+                  <th>Tipo</th>
+                  <th>Detalle</th>
+                  <th>Cant.</th>
+                  <th>Precio unit.</th>
+                  <th>Costo unit.</th>
+                  <th>Subtotal</th>
+                  <th>Margen</th>
+                </tr>
+              </thead>
+              <tbody id="margenTableBody">
+                <tr>
+                  <td colspan="9" class="empty-state">
+                    Selecciona un rango de fechas y aplica el filtro.
+                  </td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+        </article>
+      </section>
+    </div>
+  </main>
+
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <script src="./js/supabase.js"></script>
+
+  <script>
+    const supabaseClient = window.supabaseClient;
+    if (!supabaseClient) {
+      throw new Error('No se encontró window.supabaseClient. Verifica js/supabase.js');
+    }
+
+    const logoutBtn = document.getElementById('logoutBtn');
+
+    const fechaMargenInicio = document.getElementById('fechaMargenInicio');
+    const fechaMargenFin = document.getElementById('fechaMargenFin');
+
+    const btnMargenHoy = document.getElementById('btnMargenHoy');
+    const btnMargenSemana = document.getElementById('btnMargenSemana');
+    const btnMargenMes = document.getElementById('btnMargenMes');
+    const btnMargen30 = document.getElementById('btnMargen30');
+    const btnMargenAplicar = document.getElementById('btnMargenAplicar');
+
+    const margenVentaTotalText = document.getElementById('margenVentaTotalText');
+    const margenCostoTotalText = document.getElementById('margenCostoTotalText');
+    const margenTotalText = document.getElementById('margenTotalText');
+
+    const searchMargenInput = document.getElementById('searchMargenInput');
+    const margenTableBody = document.getElementById('margenTableBody');
+    const exportMargenCsvBtn = document.getElementById('exportMargenCsvBtn');
+
+    let margenFilas = [];
+    let margenFilasFiltradas = [];
+
+    function soles(value) {
+      return `S/ ${Number(value || 0).toFixed(2)}`;
+    }
+
+    function formatDateOnly(date) {
+      const y = date.getFullYear();
+      const m = String(date.getMonth() + 1).padStart(2, '0');
+      const d = String(date.getDate()).padStart(2, '0');
+      return `${y}-${m}-${d}`;
+    }
+
+    function formatDateTime(value) {
+      if (!value) return '-';
+      return new Date(value).toLocaleString('es-PE', {
+        dateStyle: 'short',
+        timeStyle: 'short'
+      });
+    }
+
+    function getWeekBounds(date = new Date()) {
+      const d = new Date(date);
+      const day = d.getDay();
+      const diffToMonday = (day === 0 ? -6 : 1) - day;
+
+      const monday = new Date(d);
+      monday.setDate(d.getDate() + diffToMonday);
+      monday.setHours(0, 0, 0, 0);
+
+      const sunday = new Date(monday);
+      sunday.setDate(monday.getDate() + 6);
+      sunday.setHours(23, 59, 59, 999);
+
+      return { start: monday, end: sunday };
+    }
+
+    function getMonthBounds(date = new Date()) {
+      const start = new Date(date.getFullYear(), date.getMonth(), 1, 0, 0, 0, 0);
+      const end = new Date(date.getFullYear(), date.getMonth() + 1, 0, 23, 59, 59, 999);
+      return { start, end };
+    }
+
+    function getLast30DaysBounds(date = new Date()) {
+      const end = new Date(date);
+      end.setHours(23, 59, 59, 999);
+      const start = new Date(date);
+      start.setDate(start.getDate() - 29);
+      start.setHours(0, 0, 0, 0);
+      return { start, end };
+    }
+
+    function normalizarTexto(value) {
+      return (value || '').toString().trim().replace(/\s+/g, ' ');
+    }
+
+    function updateResumen(filas) {
+      let venta = 0;
+      let costo = 0;
+      let margen = 0;
+
+      for (const f of filas) {
+        venta += Number(f.subtotal || 0);
+        costo += Number(f.costo_total || 0);
+        margen += Number(f.margen || 0);
+      }
+
+      const pct = venta > 0 ? (margen / venta) * 100 : 0;
+
+      margenVentaTotalText.textContent = soles(venta);
+      margenCostoTotalText.textContent = soles(costo);
+      margenTotalText.textContent = `${soles(margen)} (${pct.toFixed(1)}%)`;
+    }
+
+    function renderTabla(filas) {
+      if (!filas.length) {
+        margenTableBody.innerHTML = `
+          <tr>
+            <td colspan="9" class="empty-state">No hay ventas con costo válido para margen en el rango indicado.</td>
+          </tr>
+        `;
+        return;
+      }
+
+      margenTableBody.innerHTML = filas.map((f) => `
+        <tr>
+          <td>${f.fecha_hora_legible}</td>
+          <td>
+            <strong>${normalizarTexto(f.cliente_nombre)}</strong>
+            ${f.cliente_telefono ? `<br /><span style="color:var(--muted); font-size:.9rem;">${f.cliente_telefono}</span>` : ''}
+          </td>
+          <td>${f.tipo_venta}</td>
+          <td>${normalizarTexto(f.detalle)}</td>
+          <td>${f.cantidad}</td>
+          <td>${soles(f.precio_unitario)}</td>
+          <td>${soles(f.costo_unitario)}</td>
+          <td>${soles(f.subtotal)}</td>
+          <td>${soles(f.margen)}</td>
+        </tr>
+      `).join('');
+    }
+
+    function aplicarFiltroTexto() {
+      const term = searchMargenInput.value.trim().toLowerCase();
+      const words = term ? term.split(/\s+/).filter(Boolean) : [];
+
+      if (!words.length) {
+        margenFilasFiltradas = [...margenFilas];
+        renderTabla(margenFilasFiltradas);
+        updateResumen(margenFilasFiltradas);
+        return;
+      }
+
+      margenFilasFiltradas = margenFilas.filter((f) => {
+        const blob = [
+          f.fecha_hora_legible,
+          f.cliente_nombre,
+          f.cliente_telefono,
+          f.tipo_venta,
+          f.detalle
+        ].join(' ').toLowerCase();
+
+        return words.every((w) => blob.includes(w));
+      });
+
+      renderTabla(margenFilasFiltradas);
+      updateResumen(margenFilasFiltradas);
+    }
+
+    function mapearProductosConCosto(data) {
+      const filas = [];
+
+      for (const d of data) {
+        const pedido = d.pedidos;
+        if (!pedido) continue;
+
+        if (d.costo_unitario_snapshot == null) continue;
+
+        const cantidad = Number(d.cantidad || 0);
+        const precio = Number(d.precio_unitario_snapshot || 0);
+        const costoUnit = Number(d.costo_unitario_snapshot || 0);
+
+        const subtotal = d.subtotal != null && !Number.isNaN(Number(d.subtotal))
+          ? Number(d.subtotal)
+          : precio * cantidad;
+
+        const margen = d.utilidad_subtotal != null && !Number.isNaN(Number(d.utilidad_subtotal))
+          ? Number(d.utilidad_subtotal)
+          : subtotal - (costoUnit * cantidad);
+
+        const costoTotal = costoUnit * cantidad;
+
+        let detalle = d.nombre_snapshot || 'Producto';
+
+        if (d.es_pase && d.pase_destinatario) {
+          detalle += ` · PASE - ${d.pase_destinatario}`;
+        }
+
+        filas.push({
+          pedido_id: pedido.id,
+          fecha_pedido: pedido.fecha_pedido,
+          fecha_hora_legible: formatDateTime(pedido.fecha_pedido),
+          cliente_nombre: pedido.cliente_nombre_snapshot || 'Sin cliente',
+          cliente_telefono: pedido.cliente_telefono_snapshot || '',
+          tipo_venta: 'Productos',
+          detalle,
+          cantidad,
+          precio_unitario: precio,
+          costo_unitario: costoUnit,
+          subtotal,
+          costo_total: costoTotal,
+          margen
+        });
+      }
+
+      return filas;
+    }
+
+    function mapearServiciosConCosto(data) {
+      const filas = [];
+
+      for (const pedido of data) {
+        if (!pedido) continue;
+        if (pedido.tipo_venta !== 'servicio') continue;
+        if (pedido.servicio_tiene_costo !== true) continue;
+
+        const subtotal = Number(pedido.total_pedido || 0);
+        const costoUnit = Number(pedido.servicio_costo || 0);
+        const margen = subtotal - costoUnit;
+
+        let detalle = pedido.servicio_descripcion || 'Servicio';
+
+        if (pedido.es_pase && pedido.pase_destinatario) {
+          detalle += ` · PASE - ${pedido.pase_destinatario}`;
+        }
+
+        filas.push({
+          pedido_id: pedido.id,
+          fecha_pedido: pedido.fecha_pedido,
+          fecha_hora_legible: formatDateTime(pedido.fecha_pedido),
+          cliente_nombre: pedido.cliente_nombre_snapshot || 'Sin cliente',
+          cliente_telefono: pedido.cliente_telefono_snapshot || '',
+          tipo_venta: 'Servicio',
+          detalle,
+          cantidad: 1,
+          precio_unitario: subtotal,
+          costo_unitario: costoUnit,
+          subtotal,
+          costo_total: costoUnit,
+          margen
+        });
+      }
+
+      return filas;
+    }
+
+    async function cargarMargenesRango(startDate, endDate) {
+      margenTableBody.innerHTML = `
+        <tr>
+          <td colspan="9" class="empty-state">Cargando márgenes...</td>
+        </tr>
+      `;
+
+      const start = new Date(startDate);
+      start.setHours(0, 0, 0, 0);
+
+      const end = new Date(endDate);
+      end.setHours(23, 59, 59, 999);
+
+      const [
+        { data: detallesData, error: detallesError },
+        { data: serviciosData, error: serviciosError }
+      ] = await Promise.all([
+        supabaseClient
+          .from('venta_detalles')
+          .select(`
+            cantidad,
+            precio_unitario_snapshot,
+            costo_unitario_snapshot,
+            subtotal,
+            utilidad_subtotal,
+            nombre_snapshot,
+            es_pase,
+            pase_monto,
+            pase_destinatario,
+            pedidos!inner (
+              id,
+              fecha_pedido,
+              tipo_venta,
+              cliente_nombre_snapshot,
+              cliente_telefono_snapshot,
+              deleted_at
+            )
+          `)
+          .gte('pedidos.fecha_pedido', start.toISOString())
+          .lte('pedidos.fecha_pedido', end.toISOString())
+          .is('pedidos.deleted_at', null)
+          .eq('pedidos.tipo_venta', 'producto')
+          .order('fecha_pedido', { ascending: true, foreignTable: 'pedidos' }),
+
+        supabaseClient
+          .from('pedidos')
+          .select(`
+            id,
+            fecha_pedido,
+            tipo_venta,
+            cliente_nombre_snapshot,
+            cliente_telefono_snapshot,
+            deleted_at,
+            total_pedido,
+            servicio_descripcion,
+            servicio_costo,
+            servicio_tiene_costo,
+            es_pase,
+            pase_monto,
+            pase_destinatario
+          `)
+          .gte('fecha_pedido', start.toISOString())
+          .lte('fecha_pedido', end.toISOString())
+          .is('deleted_at', null)
+          .eq('tipo_venta', 'servicio')
+          .order('fecha_pedido', { ascending: true })
+      ]);
+
+      if (detallesError || serviciosError) {
+        const errorMessage = detallesError?.message || serviciosError?.message || 'Error desconocido';
+        console.error('Error cargarMargenesRango:', detallesError || serviciosError);
+
+        margenTableBody.innerHTML = `
+          <tr>
+            <td colspan="9" class="empty-state">
+              Error al cargar márgenes: ${errorMessage}
+            </td>
+          </tr>
+        `;
+
+        margenFilas = [];
+        margenFilasFiltradas = [];
+        updateResumen([]);
+        return;
+      }
+
+      const filasProductos = mapearProductosConCosto(detallesData || []);
+      const filasServicios = mapearServiciosConCosto(serviciosData || []);
+
+      margenFilas = [...filasProductos, ...filasServicios].sort((a, b) => {
+        return new Date(a.fecha_pedido) - new Date(b.fecha_pedido);
+      });
+
+      aplicarFiltroTexto();
+    }
+
+    function aplicarRangoYRecargar(start, end) {
+      fechaMargenInicio.value = formatDateOnly(start);
+      fechaMargenFin.value = formatDateOnly(end);
+      cargarMargenesRango(start, end);
+    }
+
+    function descargarMargenCsv(filas) {
+      if (!filas.length) {
+        alert('No hay datos para exportar.');
+        return;
+      }
+
+      const sepLine = 'sep=;\n';
+
+      const header = [
+        'Fecha/Hora',
+        'Cliente',
+        'Teléfono',
+        'Tipo de venta',
+        'Detalle',
+        'Cantidad',
+        'Precio unitario',
+        'Costo unitario',
+        'Subtotal',
+        'Costo total',
+        'Margen'
+      ];
+
+      const rows = filas.map((f) => [
+        f.fecha_hora_legible,
+        normalizarTexto(f.cliente_nombre),
+        f.cliente_telefono || '',
+        f.tipo_venta,
+        normalizarTexto(f.detalle),
+        f.cantidad,
+        Number(f.precio_unitario || 0).toFixed(2),
+        Number(f.costo_unitario || 0).toFixed(2),
+        Number(f.subtotal || 0).toFixed(2),
+        Number(f.costo_total || 0).toFixed(2),
+        Number(f.margen || 0).toFixed(2)
+      ]);
+
+      const esc = (v) => {
+        if (v == null) return '';
+        const s = String(v);
+        if (s.includes('"') || s.includes(';') || s.includes('\n')) {
+          return '"' + s.replace(/"/g, '""') + '"';
+        }
+        return s;
+      };
+
+      const csvLines = [
+        header.map(esc).join(';'),
+        ...rows.map((r) => r.map(esc).join(';'))
+      ];
+
+      const csvContent = sepLine + csvLines.join('\n');
+      const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+      const url = URL.createObjectURL(blob);
+
+      const labelInicio = fechaMargenInicio.value || 'sin_inicio';
+      const labelFin = fechaMargenFin.value || 'sin_fin';
+
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = `margenes_${labelInicio}_a_${labelFin}.csv`;
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+      URL.revokeObjectURL(url);
+    }
+
+    searchMargenInput.addEventListener('input', aplicarFiltroTexto);
+
+    btnMargenHoy.addEventListener('click', () => {
+      const hoy = new Date();
+      aplicarRangoYRecargar(hoy, hoy);
+    });
+
+    btnMargenSemana.addEventListener('click', () => {
+      const ahora = new Date();
+      const { start, end } = getWeekBounds(ahora);
+      aplicarRangoYRecargar(start, end);
+    });
+
+    btnMargenMes.addEventListener('click', () => {
+      const ahora = new Date();
+      const { start, end } = getMonthBounds(ahora);
+      aplicarRangoYRecargar(start, end);
+    });
+
+    btnMargen30.addEventListener('click', () => {
+      const { start, end } = getLast30DaysBounds(new Date());
+      aplicarRangoYRecargar(start, end);
+    });
+
+    btnMargenAplicar.addEventListener('click', () => {
+      const startVal = fechaMargenInicio.value;
+      const endVal = fechaMargenFin.value;
+
+      if (!startVal || !endVal) {
+        alert('Selecciona las fechas Desde y Hasta.');
+        return;
+      }
+
+      cargarMargenesRango(startVal, endVal);
+    });
+
+    exportMargenCsvBtn.addEventListener('click', () => {
+      descargarMargenCsv(margenFilasFiltradas);
+    });
+
+    logoutBtn.addEventListener('click', async () => {
+      await supabaseClient.auth.signOut();
+      window.location.href = './login.html';
+    });
+
+    (async () => {
+      const hoy = new Date();
+      fechaMargenInicio.value = formatDateOnly(hoy);
+      fechaMargenFin.value = formatDateOnly(hoy);
+      await cargarMargenesRango(hoy, hoy);
+    })();
+  </script>
+</body>
+</html>

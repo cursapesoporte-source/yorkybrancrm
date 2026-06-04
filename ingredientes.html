@@ -1,0 +1,1236 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Stock | YORKY CRM</title>
+  <link rel="stylesheet" href="./css/styles.css" />
+</head>
+<body>
+  <div class="brand-grain-bg" aria-hidden="true">
+    <div class="brand-grain-layer brand-grain-layer-one"></div>
+    <div class="brand-grain-layer brand-grain-layer-two"></div>
+    <div class="brand-grain-layer brand-grain-layer-three"></div>
+  </div>
+
+  <main class="clientes-page">
+    <div class="clientes-shell">
+      <header class="topbar">
+        <div class="brand-block">
+          <h1>Stock de productos</h1>
+          <p>Catálogo maestro de productos únicos y comunes del negocio.</p>
+        </div>
+
+        <div class="topbar-actions">
+          <a href="./dashboard.html" class="dashboard-icon-btn" title="Volver al dashboard" aria-label="Volver al dashboard">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+              <rect x="2" y="3" width="20" height="14" rx="2"></rect>
+              <line x1="8" y1="21" x2="16" y2="21"></line>
+              <line x1="12" y1="17" x2="12" y2="21"></line>
+            </svg>
+          </a>
+
+          <button id="logoutBtn" class="danger-btn" type="button">Cerrar sesión</button>
+        </div>
+      </header>
+
+      <section class="clientes-layout">
+        <article class="card form-card">
+          <div class="section-title">
+            <h2 id="productoFormTitle">Nuevo producto</h2>
+            <p id="productoFormSubtitle">Registra productos únicos (iPhone, MacBook, etc.) o productos comunes (cables, fundas…).</p>
+          </div>
+
+          <form id="productoForm">
+            <input type="hidden" id="editingProductoId" />
+
+            <label>
+              Tipo de producto
+              <select id="tipoProducto" required>
+                <option value="">Selecciona un tipo</option>
+                <option value="unico">Producto único (iPhone, MacBook, iPad…)</option>
+                <option value="comun">Producto común (cables, cargadores, fundas…)</option>
+              </select>
+            </label>
+
+            <label>
+              Nombre del producto
+              <input type="text" id="nombreProducto" required placeholder="Ej. iPhone 14 Pro Max" />
+            </label>
+
+            <div class="form-grid">
+              <label class="toggle-field">
+                <span>Color</span>
+                <div class="toggle-field-inner">
+                  <input type="checkbox" id="toggleColor" />
+                  <input type="text" id="colorProducto" placeholder="Ej. Negro, Azul, Silver" disabled />
+                </div>
+              </label>
+
+              <label class="toggle-field">
+                <span>Modelo (AXXXX)</span>
+                <div class="toggle-field-inner">
+                  <input type="checkbox" id="toggleModelo" />
+                  <input type="text" id="modeloProducto" placeholder="Ej. A1278" disabled />
+                </div>
+              </label>
+            </div>
+
+            <label class="toggle-field">
+              <span>Detalles</span>
+              <div class="toggle-field-inner">
+                <input type="checkbox" id="toggleDetalles" />
+                <textarea id="detallesProducto" placeholder="Notas o detalles relevantes" disabled></textarea>
+              </div>
+            </label>
+
+            <div id="camposUnico">
+              <div class="form-grid">
+                <label class="toggle-field">
+                  <span>Almacenamiento</span>
+                  <div class="toggle-field-inner">
+                    <input type="checkbox" id="toggleAlmacenamiento" />
+                    <input type="text" id="almacenamientoProducto" placeholder="Ej. 128 GB" disabled />
+                  </div>
+                </label>
+
+                <label class="toggle-field">
+                  <span>RAM</span>
+                  <div class="toggle-field-inner">
+                    <input type="checkbox" id="toggleRam" />
+                    <input type="text" id="ramProducto" placeholder="Ej. 8 GB" disabled />
+                  </div>
+                </label>
+              </div>
+
+              <div class="form-grid">
+                <label class="toggle-field">
+                  <span>% Batería</span>
+                  <div class="toggle-field-inner">
+                    <input type="checkbox" id="toggleBateria" />
+                    <input type="number" id="bateriaPorcentajeProducto" min="0" max="100" step="1" placeholder="Ej. 87" disabled />
+                  </div>
+                </label>
+
+                <label class="toggle-field">
+                  <span>Ciclos de batería</span>
+                  <div class="toggle-field-inner">
+                    <input type="checkbox" id="toggleCiclos" />
+                    <input type="number" id="bateriaCiclosProducto" min="0" step="1" placeholder="Ej. 320" disabled />
+                  </div>
+                </label>
+              </div>
+
+              <div class="form-grid">
+                <label class="toggle-field">
+                  <span>Serial</span>
+                  <div class="toggle-field-inner">
+                    <input type="checkbox" id="toggleSerial" />
+                    <input type="text" id="serialProducto" placeholder="SN del equipo" disabled />
+                  </div>
+                </label>
+
+                <label class="toggle-field">
+                  <span>Grado</span>
+                  <div class="toggle-field-inner">
+                    <input type="checkbox" id="toggleGrado" />
+                    <input type="text" id="gradoProducto" placeholder="Ej. A, B, C" disabled />
+                  </div>
+                </label>
+              </div>
+
+              <div class="form-grid">
+                <label class="toggle-field">
+                  <span>Año</span>
+                  <div class="toggle-field-inner">
+                    <input type="checkbox" id="toggleAnio" />
+                    <input type="number" id="anioProducto" min="2000" max="2100" step="1" placeholder="Ej. 2020" disabled />
+                  </div>
+                </label>
+
+                <label class="toggle-field">
+                  <span>EMMC / Chip</span>
+                  <div class="toggle-field-inner">
+                    <input type="checkbox" id="toggleEmmc" />
+                    <input type="text" id="emmcProducto" placeholder="Ej. M1, i5 8th gen" disabled />
+                  </div>
+                </label>
+              </div>
+
+              <label class="toggle-field">
+                <span>Nuevo o Usado</span>
+                <div class="toggle-field-inner">
+                  <input type="checkbox" id="toggleNuevoUsadoUnico" />
+                  <select id="nuevoUsadoUnico" disabled>
+                    <option value="">Selecciona</option>
+                    <option value="nuevo">Nuevo</option>
+                    <option value="usado">Usado</option>
+                  </select>
+                </div>
+              </label>
+            </div>
+
+            <div id="camposComun">
+              <div class="form-grid">
+                <label>
+                  Cantidad (obligatorio)
+                  <input type="number" id="cantidadProducto" min="0" step="1" placeholder="Ej. 10" />
+                </label>
+
+                <label>
+                  Stock Alert Min (obligatorio)
+                  <input type="number" id="stockMinimoProducto" min="0" step="1" placeholder="Ej. 2" />
+                </label>
+              </div>
+
+              <label class="toggle-field">
+                <span>Nuevo o Usado</span>
+                <div class="toggle-field-inner">
+                  <input type="checkbox" id="toggleNuevoUsadoComun" />
+                  <select id="nuevoUsadoComun" disabled>
+                    <option value="">Selecciona</option>
+                    <option value="nuevo">Nuevo</option>
+                    <option value="usado">Usado</option>
+                  </select>
+                </div>
+              </label>
+            </div>
+
+            <div class="form-grid">
+              <label class="toggle-field">
+                <span>Precio de venta</span>
+                <div class="toggle-field-inner">
+                  <input type="checkbox" id="togglePrecio" />
+                  <input type="number" id="precioVentaProducto" min="0" step="0.01" placeholder="Ej. 1500" disabled />
+                </div>
+              </label>
+
+              <label class="toggle-field">
+                <span>Costo</span>
+                <div class="toggle-field-inner">
+                  <input type="checkbox" id="toggleCosto" />
+                  <input type="number" id="costoProducto" min="0" step="0.01" placeholder="Opcional: costo para margen" disabled />
+                </div>
+              </label>
+            </div>
+
+            <div class="form-actions">
+              <button type="submit" class="primary-btn" id="submitProductoBtn">Guardar producto</button>
+              <button type="button" class="secondary-btn" id="resetProductoForm">Limpiar</button>
+            </div>
+
+            <p id="productoFormMessage" class="form-message"></p>
+          </form>
+        </article>
+
+        <article class="card">
+          <div class="table-toolbar table-toolbar-catalogo">
+            <div class="table-toolbar-copy">
+              <h2 style="margin-bottom:4px;">Catálogo de productos</h2>
+              <p style="color:var(--muted);">
+                Activa, desactiva y controla stock de productos únicos y comunes.
+              </p>
+            </div>
+
+            <div class="stock-toolbar-actions">
+              <label class="stock-filter-pill" for="filterStockBajoInput">
+                <input type="checkbox" id="filterStockBajoInput" />
+                <span>Solo stock bajo</span>
+              </label>
+
+              <input
+                type="text"
+                id="searchProductoInput"
+                class="search-input stock-search-input"
+                placeholder="Buscar producto por nombre, modelo, color..."
+              />
+            </div>
+          </div>
+
+          <div id="stockBajoHint" class="stock-bajo-hint">
+            <span>Estás viendo solo productos comunes con stock bajo porque llegaste desde el dashboard.</span>
+            <button
+              type="button"
+              id="clearStockBajoLinkBtn"
+              class="secondary-btn stock-bajo-clear-btn"
+            >
+              Ver todos
+            </button>
+          </div>
+
+          <div class="table-wrap">
+            <table>
+              <thead>
+                <tr>
+                  <th>Producto</th>
+                  <th>Tipo</th>
+                  <th>Detalles</th>
+                  <th>Cantidad</th>
+                  <th>Mínimo</th>
+                  <th>Alerta</th>
+                  <th>Precio</th>
+                  <th>Costo</th>
+                  <th>Estado</th>
+                  <th></th>
+                </tr>
+              </thead>
+              <tbody id="productosTableBody">
+                <tr>
+                  <td colspan="10" class="empty-state">Cargando productos...</td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+        </article>
+      </section>
+    </div>
+  </main>
+
+  <dialog id="stockDialog" class="confirm-dialog">
+    <div class="confirm-dialog-card">
+      <div class="confirm-dialog-head">
+        <h2>Editar stock de producto</h2>
+        <button type="button" class="dialog-close-btn" id="closeStockDialogBtn" aria-label="Cerrar">×</button>
+      </div>
+
+      <p class="confirm-dialog-text" id="stockDialogText">
+        Actualiza la cantidad disponible y el stock mínimo del producto común.
+      </p>
+
+      <form id="stockForm" style="margin-top:18px;">
+        <input type="hidden" id="stockProductoId" />
+
+        <label>
+          Cantidad actual
+          <input type="number" id="stockActualInput" min="0" step="1" required />
+        </label>
+
+        <label>
+          Stock mínimo (alerta)
+          <input type="number" id="stockMinimoInput" min="0" step="1" required />
+        </label>
+
+        <p id="stockFormMessage" class="form-message"></p>
+
+        <div class="confirm-dialog-actions">
+          <button type="button" class="secondary-btn" id="cancelStockBtn">Cancelar</button>
+          <button type="submit" class="primary-btn" id="saveStockBtn">Guardar cambios</button>
+        </div>
+      </form>
+    </div>
+  </dialog>
+
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <script src="./js/supabase.js"></script>
+
+  <script>
+  const supabaseClient = window.supabaseClient;
+  if (!supabaseClient) {
+    throw new Error('No se encontró window.supabaseClient. Verifica js/supabase.js');
+  }
+
+  const productoForm = document.getElementById('productoForm');
+  const productoFormMessage = document.getElementById('productoFormMessage');
+  const productosTableBody = document.getElementById('productosTableBody');
+  const searchProductoInput = document.getElementById('searchProductoInput');
+  const filterStockBajoInput = document.getElementById('filterStockBajoInput');
+  const resetProductoFormBtn = document.getElementById('resetProductoForm');
+  const logoutBtn = document.getElementById('logoutBtn');
+  const stockBajoHint = document.getElementById('stockBajoHint');
+  const clearStockBajoLinkBtn = document.getElementById('clearStockBajoLinkBtn');
+
+  const stockDialog = document.getElementById('stockDialog');
+  const stockForm = document.getElementById('stockForm');
+  const stockProductoId = document.getElementById('stockProductoId');
+  const stockActualInput = document.getElementById('stockActualInput');
+  const stockMinimoInput = document.getElementById('stockMinimoInput');
+  const stockDialogText = document.getElementById('stockDialogText');
+  const stockFormMessage = document.getElementById('stockFormMessage');
+  const closeStockDialogBtn = document.getElementById('closeStockDialogBtn');
+  const cancelStockBtn = document.getElementById('cancelStockBtn');
+  const saveStockBtn = document.getElementById('saveStockBtn');
+
+  const productoFormTitle = document.getElementById('productoFormTitle');
+  const productoFormSubtitle = document.getElementById('productoFormSubtitle');
+  const editingProductoIdInput = document.getElementById('editingProductoId');
+  const submitProductoBtn = document.getElementById('submitProductoBtn');
+
+  const tipoProductoSelect = document.getElementById('tipoProducto');
+  const camposUnico = document.getElementById('camposUnico');
+  const camposComun = document.getElementById('camposComun');
+
+  const nombreProductoInput = document.getElementById('nombreProducto');
+
+  const toggleColor = document.getElementById('toggleColor');
+  const colorProductoInput = document.getElementById('colorProducto');
+
+  const toggleModelo = document.getElementById('toggleModelo');
+  const modeloProductoInput = document.getElementById('modeloProducto');
+
+  const toggleDetalles = document.getElementById('toggleDetalles');
+  const detallesProductoInput = document.getElementById('detallesProducto');
+
+  const toggleAlmacenamiento = document.getElementById('toggleAlmacenamiento');
+  const almacenamientoProductoInput = document.getElementById('almacenamientoProducto');
+
+  const toggleRam = document.getElementById('toggleRam');
+  const ramProductoInput = document.getElementById('ramProducto');
+
+  const toggleBateria = document.getElementById('toggleBateria');
+  const bateriaPorcentajeInput = document.getElementById('bateriaPorcentajeProducto');
+
+  const toggleCiclos = document.getElementById('toggleCiclos');
+  const bateriaCiclosInput = document.getElementById('bateriaCiclosProducto');
+
+  const toggleSerial = document.getElementById('toggleSerial');
+  const serialProductoInput = document.getElementById('serialProducto');
+
+  const toggleGrado = document.getElementById('toggleGrado');
+  const gradoProductoInput = document.getElementById('gradoProducto');
+
+  const toggleAnio = document.getElementById('toggleAnio');
+  const anioProductoInput = document.getElementById('anioProducto');
+
+  const toggleEmmc = document.getElementById('toggleEmmc');
+  const emmcProductoInput = document.getElementById('emmcProducto');
+
+  const toggleNuevoUsadoUnico = document.getElementById('toggleNuevoUsadoUnico');
+  const nuevoUsadoUnicoSelect = document.getElementById('nuevoUsadoUnico');
+
+  const toggleNuevoUsadoComun = document.getElementById('toggleNuevoUsadoComun');
+  const nuevoUsadoComunSelect = document.getElementById('nuevoUsadoComun');
+
+  const cantidadProductoInput = document.getElementById('cantidadProducto');
+  const stockMinimoProductoInput = document.getElementById('stockMinimoProducto');
+
+  const togglePrecio = document.getElementById('togglePrecio');
+  const precioVentaProductoInput = document.getElementById('precioVentaProducto');
+
+  const toggleCosto = document.getElementById('toggleCosto');
+  const costoProductoInput = document.getElementById('costoProducto');
+
+  let productos = [];
+  let isEditing = false;
+
+  async function protectPage() {
+    const { data, error } = await supabaseClient.auth.getUser();
+    if (error || !data?.user) {
+      window.location.href = './login.html';
+    }
+  }
+
+  function bindToggle(checkbox, input) {
+    if (!checkbox || !input) return;
+    const sync = () => {
+      const active = checkbox.checked;
+      input.disabled = !active;
+      if (!active) input.value = '';
+    };
+    checkbox.addEventListener('change', sync);
+    sync();
+  }
+
+  function setToggleValue(checkbox, input, value) {
+    if (!checkbox || !input) return;
+    const hasValue = value !== null && value !== undefined && String(value).trim() !== '';
+    checkbox.checked = hasValue;
+    input.disabled = !hasValue;
+    input.value = hasValue ? value : '';
+  }
+
+  function updateTipoProductoUI() {
+    const tipo = tipoProductoSelect.value;
+    if (tipo === 'unico') {
+      camposUnico.style.display = '';
+      camposComun.style.display = 'none';
+    } else if (tipo === 'comun') {
+      camposUnico.style.display = 'none';
+      camposComun.style.display = '';
+    } else {
+      camposUnico.style.display = 'none';
+      camposComun.style.display = 'none';
+    }
+  }
+
+  tipoProductoSelect.addEventListener('change', updateTipoProductoUI);
+  updateTipoProductoUI();
+
+  bindToggle(toggleColor, colorProductoInput);
+  bindToggle(toggleModelo, modeloProductoInput);
+  bindToggle(toggleDetalles, detallesProductoInput);
+  bindToggle(toggleAlmacenamiento, almacenamientoProductoInput);
+  bindToggle(toggleRam, ramProductoInput);
+  bindToggle(toggleBateria, bateriaPorcentajeInput);
+  bindToggle(toggleCiclos, bateriaCiclosInput);
+  bindToggle(toggleSerial, serialProductoInput);
+  bindToggle(toggleGrado, gradoProductoInput);
+  bindToggle(toggleAnio, anioProductoInput);
+  bindToggle(toggleEmmc, emmcProductoInput);
+  bindToggle(toggleNuevoUsadoUnico, nuevoUsadoUnicoSelect);
+  bindToggle(toggleNuevoUsadoComun, nuevoUsadoComunSelect);
+  bindToggle(togglePrecio, precioVentaProductoInput);
+  bindToggle(toggleCosto, costoProductoInput);
+
+  function escapeHtml(value) {
+    return String(value ?? '')
+      .replaceAll('&', '&amp;')
+      .replaceAll('<', '&lt;')
+      .replaceAll('>', '&gt;')
+      .replaceAll('"', '&quot;')
+      .replaceAll("'", '&#39;');
+  }
+
+  function formatNumber(value, maxDecimals = 3) {
+    const num = Number(value ?? 0);
+    if (Number.isNaN(num)) return '0';
+    return num.toLocaleString('es-PE', {
+      minimumFractionDigits: 0,
+      maximumFractionDigits: maxDecimals
+    });
+  }
+
+  function formatMoney(value) {
+    const num = Number(value ?? 0);
+    if (Number.isNaN(num)) return 'S/ 0';
+    return 'S/ ' + num.toLocaleString('es-PE', {
+      minimumFractionDigits: 2,
+      maximumFractionDigits: 2
+    });
+  }
+
+  function getQueryParam(name) {
+    const params = new URLSearchParams(window.location.search);
+    return params.get(name);
+  }
+
+  function updateUrlWithoutStockBajo() {
+    const url = new URL(window.location.href);
+    url.searchParams.delete('stock_bajo');
+    window.history.replaceState({}, '', url.toString());
+  }
+
+  function isStockBajo(prod) {
+    if (prod.tipo_producto !== 'comun') return false;
+    const actual = Number(prod.cantidad ?? 0);
+    const minimo = Number(prod.stock_alert_min ?? 0);
+    return actual <= minimo;
+  }
+
+  function getStockBadge(prod) {
+    if (prod.tipo_producto !== 'comun') {
+      return '<span class="stock-badge-unique">Único</span>';
+    }
+
+    const actual = Number(prod.cantidad ?? 0);
+    const minimo = Number(prod.stock_alert_min ?? 0);
+
+    if (actual <= 0) {
+      return '<span class="stock-badge-empty">Sin stock</span>';
+    }
+
+    if (actual <= minimo) {
+      return '<span class="stock-badge-low">Stock bajo</span>';
+    }
+
+    return '<span class="stock-badge-ok">OK</span>';
+  }
+
+  function updateStockBajoHint() {
+    const cameFromDashboard = getQueryParam('stock_bajo') === '1';
+    const filterIsActive = filterStockBajoInput.checked;
+    stockBajoHint.classList.toggle('is-visible', cameFromDashboard && filterIsActive);
+  }
+
+  function openStockDialog(productoId) {
+    const prod = productos.find((p) => p.id === productoId);
+    if (!prod) return;
+    if (prod.tipo_producto !== 'comun') {
+      alert('Solo puedes editar stock para productos comunes.');
+      return;
+    }
+
+    stockProductoId.value = prod.id;
+    stockActualInput.value = Number(prod.cantidad ?? 0);
+    stockMinimoInput.value = Number(prod.stock_alert_min ?? 0);
+    stockDialogText.textContent = `Actualiza el stock y mínimo de “${prod.nombre}”.`;
+    stockFormMessage.textContent = '';
+
+    if (typeof stockDialog.showModal === 'function') {
+      stockDialog.showModal();
+    } else {
+      stockDialog.setAttribute('open', 'true');
+    }
+  }
+
+  function closeStockDialog() {
+    stockForm.reset();
+    stockFormMessage.textContent = '';
+    stockProductoId.value = '';
+
+    if (stockDialog.open) {
+      stockDialog.close();
+    } else {
+      stockDialog.removeAttribute('open');
+    }
+  }
+
+  function normalizarTexto(value) {
+    return value.trim().replace(/\s+/g, ' ');
+  }
+
+  function setFormModeCreate() {
+    isEditing = false;
+    editingProductoIdInput.value = '';
+    productoFormTitle.textContent = 'Nuevo producto';
+    productoFormSubtitle.textContent = 'Registra productos únicos (iPhone, MacBook, etc.) o productos comunes (cables, fundas…).';
+    submitProductoBtn.textContent = 'Guardar producto';
+    resetProductoFormBtn.textContent = 'Limpiar';
+  }
+
+  function resetProductoFormUI() {
+    productoForm.reset();
+    setFormModeCreate();
+    productoFormMessage.textContent = '';
+    productoFormMessage.style.color = '#7e7066';
+    updateTipoProductoUI();
+
+    [
+      [toggleColor, colorProductoInput],
+      [toggleModelo, modeloProductoInput],
+      [toggleDetalles, detallesProductoInput],
+      [toggleAlmacenamiento, almacenamientoProductoInput],
+      [toggleRam, ramProductoInput],
+      [toggleBateria, bateriaPorcentajeInput],
+      [toggleCiclos, bateriaCiclosInput],
+      [toggleSerial, serialProductoInput],
+      [toggleGrado, gradoProductoInput],
+      [toggleAnio, anioProductoInput],
+      [toggleEmmc, emmcProductoInput],
+      [toggleNuevoUsadoUnico, nuevoUsadoUnicoSelect],
+      [toggleNuevoUsadoComun, nuevoUsadoComunSelect],
+      [togglePrecio, precioVentaProductoInput],
+      [toggleCosto, costoProductoInput]
+    ].forEach(([checkbox, input]) => {
+      checkbox.checked = false;
+      input.disabled = true;
+      input.value = '';
+    });
+
+    cantidadProductoInput.value = '';
+    stockMinimoProductoInput.value = '';
+  }
+
+  function fillProductoForm(prod) {
+    if (!prod) return;
+
+    isEditing = true;
+    editingProductoIdInput.value = prod.id || '';
+
+    productoFormTitle.textContent = 'Editar producto';
+    productoFormSubtitle.textContent = 'Corrige los datos del producto y guarda los cambios.';
+    submitProductoBtn.textContent = 'Guardar cambios';
+    resetProductoFormBtn.textContent = 'Cancelar edición';
+
+    tipoProductoSelect.value = prod.tipo_producto || '';
+    updateTipoProductoUI();
+
+    nombreProductoInput.value = prod.nombre || '';
+
+    setToggleValue(toggleColor, colorProductoInput, prod.color || '');
+    setToggleValue(toggleModelo, modeloProductoInput, prod.modelo || '');
+    setToggleValue(toggleDetalles, detallesProductoInput, prod.detalles || '');
+
+    setToggleValue(toggleAlmacenamiento, almacenamientoProductoInput, prod.almacenamiento || '');
+    setToggleValue(toggleRam, ramProductoInput, prod.ram || '');
+    setToggleValue(toggleBateria, bateriaPorcentajeInput, prod.bateria_porcentaje ?? '');
+    setToggleValue(toggleCiclos, bateriaCiclosInput, prod.bateria_ciclos ?? '');
+    setToggleValue(toggleSerial, serialProductoInput, prod.serial || '');
+    setToggleValue(toggleGrado, gradoProductoInput, prod.grado || '');
+    setToggleValue(toggleAnio, anioProductoInput, prod.anio ?? '');
+    setToggleValue(toggleEmmc, emmcProductoInput, prod.emmc || '');
+    setToggleValue(togglePrecio, precioVentaProductoInput, prod.precio_venta ?? '');
+    setToggleValue(toggleCosto, costoProductoInput, prod.costo ?? '');
+
+    if (prod.tipo_producto === 'unico') {
+      setToggleValue(toggleNuevoUsadoUnico, nuevoUsadoUnicoSelect, prod.nuevo_usado || '');
+      toggleNuevoUsadoComun.checked = false;
+      nuevoUsadoComunSelect.disabled = true;
+      nuevoUsadoComunSelect.value = '';
+      cantidadProductoInput.value = '';
+      stockMinimoProductoInput.value = '';
+    } else {
+      cantidadProductoInput.value = Number(prod.cantidad ?? 0);
+      stockMinimoProductoInput.value = Number(prod.stock_alert_min ?? 0);
+      setToggleValue(toggleNuevoUsadoComun, nuevoUsadoComunSelect, prod.nuevo_usado || '');
+      toggleNuevoUsadoUnico.checked = false;
+      nuevoUsadoUnicoSelect.disabled = true;
+      nuevoUsadoUnicoSelect.value = '';
+    }
+
+    productoFormMessage.textContent = `Editando: ${prod.nombre}`;
+    productoFormMessage.style.color = '#7e7066';
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+  }
+
+  function getProductoMetaFields(prod) {
+    const fields = [];
+
+    const pushField = (label, value) => {
+      if (value === null || value === undefined) return;
+      const text = String(value).trim();
+      if (!text) return;
+      fields.push({ label, value: text });
+    };
+
+    pushField('Color', prod.color);
+    pushField('Modelo', prod.modelo);
+    pushField('Detalles', prod.detalles);
+    pushField('Almacenamiento', prod.almacenamiento);
+    pushField('RAM', prod.ram);
+    pushField('% Batería', prod.bateria_porcentaje);
+    pushField('Ciclos de batería', prod.bateria_ciclos);
+    pushField('Serial', prod.serial);
+    pushField('Grado', prod.grado);
+    pushField('Año', prod.anio);
+    pushField('EMMC / Chip', prod.emmc);
+    pushField('Nuevo o usado', prod.nuevo_usado);
+
+    if (prod.tipo_producto === 'comun') {
+      pushField('Cantidad', prod.cantidad);
+      pushField('Stock mínimo', prod.stock_alert_min);
+    }
+
+    if (prod.precio_venta != null) {
+      pushField('Precio', formatMoney(prod.precio_venta));
+    }
+
+    if (prod.costo != null) {
+      pushField('Costo', formatMoney(prod.costo));
+    }
+
+    return fields;
+  }
+
+  function getProductoSearchBlob(prod) {
+    const values = [
+      prod.nombre,
+      prod.tipo_producto,
+      prod.detalles,
+      prod.modelo,
+      prod.color,
+      prod.almacenamiento,
+      prod.ram,
+      prod.bateria_porcentaje,
+      prod.bateria_ciclos,
+      prod.serial,
+      prod.grado,
+      prod.anio,
+      prod.emmc,
+      prod.nuevo_usado,
+      prod.cantidad,
+      prod.stock_alert_min,
+      prod.precio_venta,
+      prod.costo
+    ];
+
+    return values
+      .filter((v) => v !== null && v !== undefined)
+      .map((v) => String(v).toLowerCase())
+      .join(' ');
+  }
+
+  function renderProductoDetailsPanel(prod) {
+    const meta = getProductoMetaFields(prod);
+
+    if (!meta.length) {
+      return `
+        <div class="producto-expand-card producto-expand-card-empty">
+          <p>No hay características adicionales registradas para este producto.</p>
+        </div>
+      `;
+    }
+
+    return `
+      <div class="producto-expand-card">
+        <div class="producto-expand-grid">
+          ${meta.map((item) => `
+            <div class="producto-expand-item">
+              <span class="producto-expand-label">${escapeHtml(item.label)}</span>
+              <span class="producto-expand-value">${escapeHtml(item.value)}</span>
+            </div>
+          `).join('')}
+        </div>
+      </div>
+    `;
+  }
+
+  function applyFilters() {
+    const term = searchProductoInput.value.trim().toLowerCase();
+    const onlyStockBajo = filterStockBajoInput.checked;
+    const words = term ? term.split(/\s+/).filter(Boolean) : [];
+
+    const filtrados = productos.filter((prod) => {
+      const hayStockBajo = !onlyStockBajo || isStockBajo(prod);
+      if (!hayStockBajo) return false;
+
+      if (!words.length) return true;
+
+      const blob = getProductoSearchBlob(prod);
+      return words.every((w) => blob.includes(w));
+    });
+
+    renderProductos(filtrados);
+    updateStockBajoHint();
+  }
+
+  function renderProductos(list) {
+    if (!list.length) {
+      productosTableBody.innerHTML = `
+        <tr>
+          <td colspan="10" class="empty-state">No hay productos que coincidan con la búsqueda o filtro actual.</td>
+        </tr>
+      `;
+      return;
+    }
+
+    productosTableBody.innerHTML = list
+      .map((prod) => {
+        const detailRowId = `producto-expand-${prod.id}`;
+        const hasExtraInfo = getProductoMetaFields(prod).length > 0;
+
+        return `
+          <tr data-id="${prod.id}" class="producto-row-premium">
+            <td class="producto-main-cell">
+              <div class="producto-main-shell">
+                <button
+                  type="button"
+                  class="producto-expand-toggle ${hasExtraInfo ? '' : 'is-disabled'}"
+                  data-role="toggle-details"
+                  data-target="${detailRowId}"
+                  aria-expanded="false"
+                  aria-controls="${detailRowId}"
+                  ${hasExtraInfo ? '' : 'disabled'}
+                  title="${hasExtraInfo ? 'Ver detalles del producto' : 'Sin detalles adicionales'}"
+                >
+                  <span class="producto-expand-toggle-icon">›</span>
+                </button>
+
+                <div class="producto-main-copy">
+                  <strong class="producto-main-name">${escapeHtml(prod.nombre)}</strong>
+
+                  <div class="producto-main-subline">
+                    <span class="producto-main-type-pill ${prod.tipo_producto === 'unico' ? 'is-unique' : 'is-common'}">
+                      ${prod.tipo_producto === 'unico' ? 'Único' : 'Común'}
+                    </span>
+
+                    ${prod.modelo ? `<span class="producto-main-inline">${escapeHtml(prod.modelo)}</span>` : ''}
+                    ${prod.color ? `<span class="producto-main-inline">${escapeHtml(prod.color)}</span>` : ''}
+                    ${prod.serial ? `<span class="producto-main-inline">Serial: ${escapeHtml(prod.serial)}</span>` : ''}
+                  </div>
+                </div>
+              </div>
+            </td>
+
+            <td>${prod.tipo_producto === 'unico' ? 'Único' : 'Común'}</td>
+            <td>${escapeHtml(prod.detalles || '-')}</td>
+            <td>${prod.tipo_producto === 'unico' ? '1' : formatNumber(prod.cantidad)}</td>
+            <td>${prod.tipo_producto === 'unico' ? '-' : formatNumber(prod.stock_alert_min)}</td>
+            <td>${getStockBadge(prod)}</td>
+            <td>${prod.precio_venta != null ? formatMoney(prod.precio_venta) : '-'}</td>
+            <td>${prod.costo != null ? formatMoney(prod.costo) : '-'}</td>
+            <td>
+              <button
+                type="button"
+                class="secondary-btn stock-state-btn"
+                data-role="toggle-activo"
+                data-id="${prod.id}"
+                data-activo="${prod.es_activo ? '1' : '0'}"
+              >
+                ${prod.es_activo ? 'Activo' : 'Inactivo'}
+              </button>
+            </td>
+            <td class="stock-actions-cell">
+              <div class="stock-actions-group">
+                <button
+                  type="button"
+                  class="secondary-btn"
+                  title="Editar producto"
+                  data-role="edit-producto"
+                  data-id="${prod.id}"
+                >
+                  Editar
+                </button>
+
+                <button
+                  type="button"
+                  class="secondary-btn"
+                  title="Editar stock"
+                  data-role="edit-stock"
+                  data-id="${prod.id}"
+                >
+                  Stock
+                </button>
+
+                <button
+                  type="button"
+                  class="delete-btn-icon"
+                  title="Eliminar producto"
+                  data-role="delete-producto"
+                  data-id="${prod.id}"
+                  aria-label="Eliminar producto"
+                >
+                  ×
+                </button>
+              </div>
+            </td>
+          </tr>
+
+          <tr id="${detailRowId}" class="producto-expand-row" hidden>
+            <td colspan="10" class="producto-expand-cell">
+              ${renderProductoDetailsPanel(prod)}
+            </td>
+          </tr>
+        `;
+      })
+      .join('');
+
+    productosTableBody.querySelectorAll('button[data-role="toggle-activo"]').forEach((btn) => {
+      btn.addEventListener('click', () => handleToggleActivo(btn));
+    });
+
+    productosTableBody.querySelectorAll('button[data-role="delete-producto"]').forEach((btn) => {
+      btn.addEventListener('click', () => handleDeleteProducto(btn));
+    });
+
+    productosTableBody.querySelectorAll('button[data-role="edit-stock"]').forEach((btn) => {
+      btn.addEventListener('click', () => openStockDialog(btn.getAttribute('data-id')));
+    });
+
+    productosTableBody.querySelectorAll('button[data-role="edit-producto"]').forEach((btn) => {
+      btn.addEventListener('click', () => {
+        const prod = productos.find((p) => p.id === btn.getAttribute('data-id'));
+        fillProductoForm(prod);
+      });
+    });
+
+    productosTableBody.querySelectorAll('button[data-role="toggle-details"]').forEach((btn) => {
+      btn.addEventListener('click', () => {
+        const targetId = btn.getAttribute('data-target');
+        const row = document.getElementById(targetId);
+        if (!row) return;
+
+        const isOpen = !row.hidden;
+        row.hidden = isOpen;
+        btn.setAttribute('aria-expanded', String(!isOpen));
+        btn.classList.toggle('is-open', !isOpen);
+      });
+    });
+  }
+
+  async function handleToggleActivo(btn) {
+    const id = btn.getAttribute('data-id');
+    const activoActual = btn.getAttribute('data-activo') === '1';
+    const nuevoEstado = !activoActual;
+
+    btn.textContent = 'Actualizando...';
+    btn.disabled = true;
+
+    const { error } = await supabaseClient
+      .from('productos')
+      .update({ es_activo: nuevoEstado })
+      .eq('id', id);
+
+    if (error) {
+      btn.textContent = activoActual ? 'Activo' : 'Inactivo';
+      btn.disabled = false;
+      alert('Error al cambiar estado: ' + error.message);
+      return;
+    }
+
+    const idx = productos.findIndex((p) => p.id === id);
+    if (idx !== -1) productos[idx].es_activo = nuevoEstado;
+
+    applyFilters();
+  }
+
+  async function handleDeleteProducto(btn) {
+    const id = btn.getAttribute('data-id');
+    const prod = productos.find((p) => p.id === id);
+    const nombre = prod?.nombre || 'este producto';
+
+    const confirmar = confirm(`¿Eliminar el producto “${nombre}”? Esta acción no se puede deshacer.`);
+    if (!confirmar) return;
+
+    btn.disabled = true;
+
+    const { error } = await supabaseClient
+      .from('productos')
+      .delete()
+      .eq('id', id);
+
+    if (error) {
+      alert('Error al eliminar: ' + error.message);
+      btn.disabled = false;
+      return;
+    }
+
+    productos = productos.filter((p) => p.id !== id);
+
+    if (editingProductoIdInput.value === id) {
+      resetProductoFormUI();
+    }
+
+    applyFilters();
+  }
+
+  async function loadProductos() {
+    const { data, error } = await supabaseClient
+      .from('productos')
+      .select('*')
+      .order('nombre', { ascending: true });
+
+    if (error) {
+      productosTableBody.innerHTML = `
+        <tr>
+          <td colspan="10" class="empty-state">Error al cargar productos: ${escapeHtml(error.message)}</td>
+        </tr>
+      `;
+      return;
+    }
+
+    productos = data || [];
+    applyFilters();
+  }
+
+  productoForm.addEventListener('submit', async (e) => {
+    e.preventDefault();
+
+    const editingId = editingProductoIdInput.value.trim();
+    const tipo = tipoProductoSelect.value;
+    const nombreBruto = nombreProductoInput.value;
+    const nombre = normalizarTexto(nombreBruto);
+
+    if (!tipo) {
+      productoFormMessage.textContent = 'Selecciona el tipo de producto.';
+      productoFormMessage.style.color = '#c14646';
+      return;
+    }
+
+    if (!nombre) {
+      productoFormMessage.textContent = 'Escribe un nombre de producto.';
+      productoFormMessage.style.color = '#c14646';
+      return;
+    }
+
+    let cantidad = 0;
+    let stockMin = 0;
+
+    if (tipo === 'comun') {
+      cantidad = Number(cantidadProductoInput.value || 0);
+      stockMin = Number(stockMinimoProductoInput.value || 0);
+
+      if (!Number.isFinite(cantidad) || cantidad < 0) {
+        productoFormMessage.textContent = 'Escribe una cantidad válida para producto común.';
+        productoFormMessage.style.color = '#c14646';
+        return;
+      }
+
+      if (!Number.isFinite(stockMin) || stockMin < 0) {
+        productoFormMessage.textContent = 'Escribe un stock mínimo válido para producto común.';
+        productoFormMessage.style.color = '#c14646';
+        return;
+      }
+    }
+
+    const payload = {
+      tipo_producto: tipo,
+      nombre,
+      cantidad: tipo === 'comun' ? cantidad : 0,
+      stock_alert_min: tipo === 'comun' ? stockMin : 0
+    };
+
+    if (!editingId) {
+      payload.es_activo = true;
+    }
+
+    payload.color = toggleColor.checked && colorProductoInput.value.trim() ? colorProductoInput.value.trim() : null;
+    payload.modelo = toggleModelo.checked && modeloProductoInput.value.trim() ? modeloProductoInput.value.trim() : null;
+    payload.detalles = toggleDetalles.checked && detallesProductoInput.value.trim() ? detallesProductoInput.value.trim() : null;
+    payload.precio_venta = togglePrecio.checked && precioVentaProductoInput.value ? Number(precioVentaProductoInput.value) : null;
+    payload.costo = toggleCosto.checked && costoProductoInput.value ? Number(costoProductoInput.value) : null;
+
+    if (tipo === 'unico') {
+      payload.almacenamiento = toggleAlmacenamiento.checked && almacenamientoProductoInput.value.trim() ? almacenamientoProductoInput.value.trim() : null;
+      payload.ram = toggleRam.checked && ramProductoInput.value.trim() ? ramProductoInput.value.trim() : null;
+      payload.bateria_porcentaje = toggleBateria.checked && bateriaPorcentajeInput.value ? Number(bateriaPorcentajeInput.value) : null;
+      payload.bateria_ciclos = toggleCiclos.checked && bateriaCiclosInput.value ? Number(bateriaCiclosInput.value) : null;
+      payload.serial = toggleSerial.checked && serialProductoInput.value.trim() ? serialProductoInput.value.trim() : null;
+      payload.grado = toggleGrado.checked && gradoProductoInput.value.trim() ? gradoProductoInput.value.trim() : null;
+      payload.anio = toggleAnio.checked && anioProductoInput.value ? Number(anioProductoInput.value) : null;
+      payload.emmc = toggleEmmc.checked && emmcProductoInput.value.trim() ? emmcProductoInput.value.trim() : null;
+      payload.nuevo_usado = toggleNuevoUsadoUnico.checked && nuevoUsadoUnicoSelect.value ? nuevoUsadoUnicoSelect.value : null;
+    } else {
+      payload.almacenamiento = null;
+      payload.ram = null;
+      payload.bateria_porcentaje = null;
+      payload.bateria_ciclos = null;
+      payload.serial = null;
+      payload.grado = null;
+      payload.anio = null;
+      payload.emmc = null;
+      payload.nuevo_usado = toggleNuevoUsadoComun.checked && nuevoUsadoComunSelect.value ? nuevoUsadoComunSelect.value : null;
+    }
+
+    productoFormMessage.textContent = editingId ? 'Guardando cambios...' : 'Guardando producto...';
+    productoFormMessage.style.color = '#7e7066';
+    submitProductoBtn.disabled = true;
+
+    let response;
+
+    if (editingId) {
+      response = await supabaseClient
+        .from('productos')
+        .update(payload)
+        .eq('id', editingId)
+        .select()
+        .single();
+    } else {
+      response = await supabaseClient
+        .from('productos')
+        .insert([payload])
+        .select()
+        .single();
+    }
+
+    const { data, error } = response;
+
+    if (error) {
+      productoFormMessage.textContent = `Error: ${error.message}`;
+      productoFormMessage.style.color = '#c14646';
+      submitProductoBtn.disabled = false;
+      return;
+    }
+
+    if (editingId) {
+      const idx = productos.findIndex((p) => p.id === editingId);
+      if (idx !== -1) productos[idx] = data;
+      productoFormMessage.textContent = 'Producto actualizado correctamente.';
+    } else {
+      productos.push(data);
+      productoFormMessage.textContent = 'Producto guardado correctamente.';
+    }
+
+    productos.sort((a, b) => (a.nombre || '').localeCompare(b.nombre || '', 'es'));
+    productoFormMessage.style.color = '#2f7d57';
+    submitProductoBtn.disabled = false;
+
+    applyFilters();
+    resetProductoFormUI();
+  });
+
+  stockForm.addEventListener('submit', async (e) => {
+    e.preventDefault();
+
+    const id = stockProductoId.value;
+    const cantidad = Number(stockActualInput.value);
+    const stockMin = Number(stockMinimoInput.value);
+
+    if (!id) return;
+
+    if (Number.isNaN(cantidad) || cantidad < 0) {
+      stockFormMessage.textContent = 'Escribe una cantidad válida igual o mayor a 0.';
+      stockFormMessage.style.color = '#c14646';
+      return;
+    }
+
+    if (Number.isNaN(stockMin) || stockMin < 0) {
+      stockFormMessage.textContent = 'Escribe un stock mínimo válido igual o mayor a 0.';
+      stockFormMessage.style.color = '#c14646';
+      return;
+    }
+
+    stockFormMessage.textContent = 'Guardando cambios...';
+    stockFormMessage.style.color = '#7e7066';
+    saveStockBtn.disabled = true;
+
+    const { data, error } = await supabaseClient
+      .from('productos')
+      .update({
+        cantidad,
+        stock_alert_min: stockMin
+      })
+      .eq('id', id)
+      .select()
+      .single();
+
+    if (error) {
+      stockFormMessage.textContent = `Error: ${error.message}`;
+      stockFormMessage.style.color = '#c14646';
+      saveStockBtn.disabled = false;
+      return;
+    }
+
+    const idx = productos.findIndex((p) => p.id === id);
+    if (idx !== -1) {
+      productos[idx] = {
+        ...productos[idx],
+        ...data
+      };
+    }
+
+    applyFilters();
+    stockFormMessage.textContent = 'Stock actualizado correctamente.';
+    stockFormMessage.style.color = '#2f7d57';
+    saveStockBtn.disabled = false;
+
+    setTimeout(() => {
+      closeStockDialog();
+    }, 450);
+  });
+
+  searchProductoInput.addEventListener('input', applyFilters);
+
+  filterStockBajoInput.addEventListener('change', () => {
+    if (!filterStockBajoInput.checked) {
+      updateUrlWithoutStockBajo();
+    }
+    applyFilters();
+  });
+
+  clearStockBajoLinkBtn.addEventListener('click', () => {
+    filterStockBajoInput.checked = false;
+    updateUrlWithoutStockBajo();
+    applyFilters();
+  });
+
+  resetProductoFormBtn.addEventListener('click', () => {
+    resetProductoFormUI();
+  });
+
+  closeStockDialogBtn.addEventListener('click', closeStockDialog);
+  cancelStockBtn.addEventListener('click', closeStockDialog);
+
+  stockDialog.addEventListener('cancel', (e) => {
+    e.preventDefault();
+    closeStockDialog();
+  });
+
+  logoutBtn.addEventListener('click', async () => {
+    await supabaseClient.auth.signOut();
+    window.location.href = './login.html';
+  });
+
+  (async () => {
+    await protectPage();
+
+    const stockBajoFlag = getQueryParam('stock_bajo');
+    if (stockBajoFlag === '1') {
+      filterStockBajoInput.checked = true;
+    }
+
+    resetProductoFormUI();
+    await loadProductos();
+  })();
+</script>
+</body>
+</html>

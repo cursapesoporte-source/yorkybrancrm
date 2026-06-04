@@ -1,0 +1,1332 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Ventas | YORKY CRM</title>
+  <link rel="stylesheet" href="./css/styles.css" />
+</head>
+<body>
+  <div class="brand-grain-bg" aria-hidden="true">
+    <div class="brand-grain-layer brand-grain-layer-one"></div>
+    <div class="brand-grain-layer brand-grain-layer-two"></div>
+    <div class="brand-grain-layer brand-grain-layer-three"></div>
+  </div>
+
+  <main class="clientes-page">
+    <div class="clientes-shell">
+      <header class="topbar">
+        <div class="brand-block">
+          <h1>Ventas</h1>
+          <p>Registra ventas de productos o servicios y conserva el historial reciente.</p>
+        </div>
+
+        <div class="topbar-actions">
+          <a href="./dashboard.html" class="dashboard-icon-btn" title="Volver al dashboard" aria-label="Volver al dashboard">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+              <rect x="2" y="3" width="20" height="14" rx="2"></rect>
+              <line x1="8" y1="21" x2="16" y2="21"></line>
+              <line x1="12" y1="17" x2="12" y2="21"></line>
+            </svg>
+          </a>
+
+          <button id="logoutBtn" class="danger-btn" type="button">Cerrar sesión</button>
+        </div>
+      </header>
+
+      <section id="mainSplitLayout" class="split-layout split-layout--balanced">
+  <article class="card form-card split-panel split-panel--left">
+    <div class="section-title">
+      <h2>Registrar venta</h2>
+      <p>Elige si es una venta de productos o un servicio y completa los datos.</p>
+    </div>
+
+    <form id="ventaForm">
+      <label>
+        Tipo de venta
+        <select id="tipoVentaSelect" required>
+          <option value="producto">Venta de productos</option>
+          <option value="servicio">Servicio</option>
+        </select>
+      </label>
+
+      <label>
+        Buscar cliente (opcional)
+        <input
+          type="text"
+          id="clienteSearchInput"
+          placeholder="Escribe nombre, apellido o teléfono"
+          autocomplete="off"
+        />
+      </label>
+
+      <div id="clienteResults" class="search-results-box" hidden></div>
+
+      <div class="selected-client-card" id="selectedClientCard" hidden>
+        <strong>Cliente seleccionado</strong>
+        <p id="selectedClientText">Sin datos</p>
+        <button type="button" class="secondary-btn mini-btn" id="clearSelectedClientBtn">Quitar</button>
+      </div>
+
+      <label>
+        Fecha de la venta
+        <input type="datetime-local" id="fechaVenta" required />
+      </label>
+
+      <label>
+        Notas
+        <textarea id="ventaNotas" placeholder="Observación opcional sobre la venta"></textarea>
+      </label>
+
+      <div id="productosSection">
+        <div class="section-title" style="margin-top: 6px;">
+          <h2 style="margin-bottom: 6px;">Productos de la venta</h2>
+          <p>Agrega uno o varios productos con sus cantidades.</p>
+        </div>
+
+        <div id="ventaItemsList" class="ingredients-list"></div>
+
+        <button type="button" class="secondary-btn" id="addVentaItemBtn">Añadir producto</button>
+      </div>
+
+      <div id="servicioSection" style="display:none; margin-top:12px;">
+        <div class="section-title" style="margin-top: 6px;">
+          <h2 style="margin-bottom:6px;">Datos del servicio</h2>
+        </div>
+
+        <label>
+          Descripción del servicio
+          <textarea id="descripcionServicio" placeholder="Ej. Instalación de Office, formateo, etc."></textarea>
+        </label>
+
+        <label>
+          Monto total del servicio
+          <input type="number" id="montoServicio" min="0" step="0.01" placeholder="Ej. 150.00" />
+        </label>
+
+        <div class="inline-toggles-block">
+          <label class="toggle-check">
+            <input type="checkbox" id="servicioTieneCostoToggle" />
+            <span>Costo?</span>
+          </label>
+        </div>
+
+        <div id="servicioCostoWrap" class="conditional-box" style="display:none;">
+          <label>
+            Costo del servicio
+            <input type="number" id="costoServicio" min="0" step="0.01" placeholder="Ej. 50.00" />
+          </label>
+          <p class="helper-text">Si colocas 0, el total del servicio contará como margen completo.</p>
+        </div>
+
+        <div class="inline-toggles-block">
+          <label class="toggle-check">
+            <input type="checkbox" id="servicioPaseToggle" />
+            <span>Pase?</span>
+          </label>
+        </div>
+
+        <div id="servicioPaseWrap" class="conditional-box" style="display:none;">
+          <label>
+            Monto pase
+            <input type="number" id="servicioPaseMonto" min="0" step="0.01" placeholder="Ej. 60.00" />
+          </label>
+
+          <label>
+            ¿A quién se pasó?
+            <input type="text" id="servicioPaseDestinatario" placeholder="Nombre, negocio o número de tienda" />
+          </label>
+        </div>
+      </div>
+
+      <div class="visit-total-box">
+        <span>Total de la venta</span>
+        <strong id="ventaTotalText">S/ 0.00</strong>
+      </div>
+
+      <div class="form-actions">
+        <button type="submit" class="primary-btn" id="submitVentaBtn">Registrar venta</button>
+        <button type="button" class="secondary-btn" id="resetVentaFormBtn">Limpiar</button>
+      </div>
+
+      <p id="ventaFormMessage" class="form-message"></p>
+    </form>
+  </article>
+
+  
+
+  <article class="card split-panel split-panel--right">
+    <div class="table-toolbar">
+      <div>
+        <h2 style="margin-bottom:4px;">Historial reciente</h2>
+        <p style="color:var(--muted);">Últimas ventas registradas con sus productos o servicios.</p>
+      </div>
+    </div>
+
+    <div id="ventasHistoryList" class="history-list">
+      <div class="empty-state">Cargando ventas...</div>
+    </div>
+  </article>
+</section>
+    </div>
+  </main>
+
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <script src="./js/supabase.js"></script>
+
+  <script>
+    const supabaseClient = window.supabaseClient;
+    if (!supabaseClient) {
+      throw new Error('No se encontró window.supabaseClient. Verifica js/supabase.js');
+    }
+
+    const logoutBtn = document.getElementById('logoutBtn');
+
+    const ventaForm = document.getElementById('ventaForm');
+    const ventaFormMessage = document.getElementById('ventaFormMessage');
+    const tipoVentaSelect = document.getElementById('tipoVentaSelect');
+
+    const clienteSearchInput = document.getElementById('clienteSearchInput');
+    const clienteResults = document.getElementById('clienteResults');
+    const selectedClientCard = document.getElementById('selectedClientCard');
+    const selectedClientText = document.getElementById('selectedClientText');
+    const clearSelectedClientBtn = document.getElementById('clearSelectedClientBtn');
+
+    const fechaVentaInput = document.getElementById('fechaVenta');
+    const ventaNotasInput = document.getElementById('ventaNotas');
+
+    const productosSection = document.getElementById('productosSection');
+    const servicioSection = document.getElementById('servicioSection');
+    const descripcionServicioInput = document.getElementById('descripcionServicio');
+    const montoServicioInput = document.getElementById('montoServicio');
+
+    const servicioTieneCostoToggle = document.getElementById('servicioTieneCostoToggle');
+    const servicioCostoWrap = document.getElementById('servicioCostoWrap');
+    const costoServicioInput = document.getElementById('costoServicio');
+
+    const servicioPaseToggle = document.getElementById('servicioPaseToggle');
+    const servicioPaseWrap = document.getElementById('servicioPaseWrap');
+    const servicioPaseMontoInput = document.getElementById('servicioPaseMonto');
+    const servicioPaseDestinatarioInput = document.getElementById('servicioPaseDestinatario');
+
+    const ventaItemsList = document.getElementById('ventaItemsList');
+    const addVentaItemBtn = document.getElementById('addVentaItemBtn');
+    const ventaTotalText = document.getElementById('ventaTotalText');
+    const resetVentaFormBtn = document.getElementById('resetVentaFormBtn');
+    const ventasHistoryList = document.getElementById('ventasHistoryList');
+    const submitVentaBtn = document.getElementById('submitVentaBtn');
+
+    let clientes = [];
+    let productos = [];
+    let ventas = [];
+    let selectedClient = null;
+    let ventaItems = [];
+    let isSubmitting = false;
+
+    async function protectPage() {
+      const { data, error } = await supabaseClient.auth.getUser();
+      if (error || !data?.user) {
+        window.location.href = './login.html';
+      }
+    }
+
+    function soles(value) {
+      return `S/ ${Number(value || 0).toFixed(2)}`;
+    }
+
+    function formatDateTime(value) {
+      if (!value) return '-';
+      return new Date(value).toLocaleString('es-PE', {
+        dateStyle: 'medium',
+        timeStyle: 'short'
+      });
+    }
+
+    function toDateTimeLocalValue(date = new Date()) {
+      const pad = (n) => String(n).padStart(2, '0');
+      const y = date.getFullYear();
+      const m = pad(date.getMonth() + 1);
+      const d = pad(date.getDate());
+      const h = pad(date.getHours());
+      const min = pad(date.getMinutes());
+      return `${y}-${m}-${d}T${h}:${min}`;
+    }
+
+    function escapeHtml(value) {
+      return String(value ?? '')
+        .replaceAll('&', '&amp;')
+        .replaceAll('<', '&lt;')
+        .replaceAll('>', '&gt;')
+        .replaceAll('"', '&quot;')
+        .replaceAll("'", '&#39;');
+    }
+
+    function getTipoClienteLabel(tipo) {
+      return tipo === 'negocio' ? 'Negocio' : 'Persona';
+    }
+
+    function getClienteDisplayName(cliente) {
+      if (!cliente) return 'Cliente';
+      return `${cliente.nombres || ''} ${cliente.apellidos || ''}`.trim() || 'Cliente';
+    }
+
+    function getClienteSearchText(cliente) {
+      return [
+        cliente.nombres || '',
+        cliente.apellidos || '',
+        cliente.telefono || '',
+        cliente.notas || '',
+        cliente.tipo_cliente || ''
+      ].join(' ').toLowerCase();
+    }
+
+    function setFormMessage(text, color = '#7e7066') {
+      ventaFormMessage.textContent = text;
+      ventaFormMessage.style.color = color;
+    }
+
+    function setSubmittingState(submitting) {
+      isSubmitting = submitting;
+      submitVentaBtn.disabled = submitting;
+      resetVentaFormBtn.disabled = submitting;
+      addVentaItemBtn.disabled = submitting;
+      tipoVentaSelect.disabled = submitting;
+    }
+
+    function renderSelectedClient() {
+      if (!selectedClient) {
+        selectedClientCard.hidden = true;
+        selectedClientText.textContent = 'Sin datos';
+        return;
+      }
+
+      selectedClientCard.hidden = false;
+      selectedClientText.textContent =
+        `${getClienteDisplayName(selectedClient)} · ${getTipoClienteLabel(selectedClient.tipo_cliente)}` +
+        `${selectedClient.telefono ? ' · ' + selectedClient.telefono : ''}`;
+    }
+
+    function clearClienteResults() {
+      clienteResults.hidden = true;
+      clienteResults.innerHTML = '';
+    }
+
+    function renderClienteResults(list) {
+      if (!clienteSearchInput.value.trim()) {
+        clearClienteResults();
+        return;
+      }
+
+      if (!list.length) {
+        clienteResults.hidden = false;
+        clienteResults.innerHTML = `<div class="search-result-empty">No se encontraron clientes.</div>`;
+        return;
+      }
+
+      clienteResults.hidden = false;
+      clienteResults.innerHTML = list.map((cliente) => `
+        <button
+          type="button"
+          class="search-result-item"
+          data-role="select-client"
+          data-id="${cliente.id}"
+        >
+          <strong>${escapeHtml(getClienteDisplayName(cliente))}</strong>
+          <span>${escapeHtml(getTipoClienteLabel(cliente.tipo_cliente))}${cliente.telefono ? ' · ' + escapeHtml(cliente.telefono) : ''}</span>
+        </button>
+      `).join('');
+
+      clienteResults.querySelectorAll('button[data-role="select-client"]').forEach((btn) => {
+        btn.addEventListener('click', () => {
+          const id = btn.getAttribute('data-id');
+          selectedClient = clientes.find((cliente) => cliente.id === id) || null;
+          renderSelectedClient();
+          clienteSearchInput.value = '';
+          clearClienteResults();
+        });
+      });
+    }
+
+    function getProductoById(id) {
+      return productos.find((p) => p.id === id) || null;
+    }
+
+    function getProductoPrecio(prod) {
+      return Number(prod?.precio_venta || 0);
+    }
+
+    function getProductoCosto(prod) {
+      return prod?.costo != null ? Number(prod.costo) : null;
+    }
+
+    function getProductoStock(prod) {
+      return Number(prod?.cantidad ?? 0);
+    }
+
+    function getProductoTipoLabel(tipo) {
+      return tipo === 'unico' ? 'Único' : 'Común';
+    }
+
+    function getProductoDisplayName(prod) {
+      if (!prod) return 'Producto';
+
+      const parts = [prod.nombre || 'Producto'];
+
+      if (prod.tipo_producto === 'unico') {
+        if (prod.color) parts.push(prod.color);
+        if (prod.modelo) parts.push(prod.modelo);
+      } else if (prod.modelo) {
+        parts.push(prod.modelo);
+      }
+
+      return parts.join(' · ');
+    }
+
+    function getProductoHelper(prod) {
+      if (!prod) return '';
+
+      const info = [
+        prod.tipo_producto ? `Tipo: ${getProductoTipoLabel(prod.tipo_producto)}` : '',
+        prod.detalles || '',
+        `Stock: ${getProductoStock(prod)}`
+      ].filter(Boolean);
+
+      return info.join(' · ');
+    }
+
+    function createVentaItem() {
+      return {
+        row_id: crypto.randomUUID(),
+        producto_id: '',
+        cantidad: 1,
+        es_pase: false,
+        pase_monto: '',
+        pase_destinatario: ''
+      };
+    }
+
+    function calcularTotalVentaProductos() {
+      return ventaItems.reduce((acc, item) => {
+        const prod = getProductoById(item.producto_id);
+        const precioNormal = getProductoPrecio(prod);
+        const cantidad = Number(item.cantidad || 0);
+
+        if (cantidad <= 0) return acc;
+
+        const usaPase = item.es_pase === true;
+        const paseMonto = Number(item.pase_monto || 0);
+        const precioAplicado = usaPase && paseMonto > 0 ? paseMonto : precioNormal;
+
+        return acc + (precioAplicado * cantidad);
+      }, 0);
+    }
+
+    function refreshVentaTotal() {
+      let total = 0;
+
+      if (tipoVentaSelect.value === 'producto') {
+        total = calcularTotalVentaProductos();
+      } else {
+        const montoNormal = Number(montoServicioInput.value || 0);
+        const usaPase = servicioPaseToggle.checked;
+        const paseMonto = Number(servicioPaseMontoInput.value || 0);
+
+        total = usaPase && paseMonto > 0 ? paseMonto : montoNormal;
+      }
+
+      ventaTotalText.textContent = soles(total);
+    }
+
+    function getProductosDisponiblesParaSelect() {
+      return (productos || []).filter((p) => {
+        if (!p || p.es_activo !== true) return false;
+
+        if (p.tipo_producto === 'unico') {
+          return true;
+        }
+
+        return Number(p.cantidad || 0) > 0;
+      });
+    }
+
+    function renderVentaItems() {
+  if (tipoVentaSelect.value !== 'producto') {
+    ventaItemsList.innerHTML = '';
+    refreshVentaTotal();
+    return;
+  }
+
+  if (!ventaItems.length) {
+    ventaItemsList.innerHTML = `
+      <div class="venta-items-empty">
+        <div class="venta-items-empty-icon">＋</div>
+        <div>
+          <strong>Aún no agregaste productos</strong>
+          <p>Pulsa “Añadir producto” para empezar a armar la venta.</p>
+        </div>
+      </div>
+    `;
+    refreshVentaTotal();
+    return;
+  }
+
+  const productosDisponibles = getProductosDisponiblesParaSelect();
+
+  ventaItemsList.innerHTML = ventaItems.map((item) => {
+    const prod = getProductoById(item.producto_id);
+    const precioNormal = getProductoPrecio(prod);
+    const cantidad = Number(item.cantidad || 1);
+    const usaPase = item.es_pase === true;
+    const paseMonto = Number(item.pase_monto || 0);
+    const precioAplicado = usaPase && paseMonto > 0 ? paseMonto : precioNormal;
+    const subtotal = precioAplicado * cantidad;
+
+    return `
+      <div class="pedido-row pedido-row-premium" data-row-id="${item.row_id}">
+        <div class="visit-row-main">
+          <label>
+            Producto
+            <select data-role="venta-producto">
+              <option value="">Selecciona un producto</option>
+              ${productosDisponibles.map((p) => `
+                <option value="${p.id}" ${p.id === item.producto_id ? 'selected' : ''}>
+                  ${escapeHtml(getProductoDisplayName(p))} · [${escapeHtml(getProductoTipoLabel(p.tipo_producto))}] · ${soles(getProductoPrecio(p))}
+                </option>
+              `).join('')}
+            </select>
+          </label>
+
+          <p class="helper-text" style="margin-top:4px;">
+            ${prod ? escapeHtml(getProductoHelper(prod)) : '\u00A0'}
+          </p>
+        </div>
+
+        <div class="pedido-side-stack">
+          <div class="pedido-side-top">
+            <div class="visit-row-subtotal" data-role="item-subtotal">${soles(subtotal)}</div>
+
+            <button
+              type="button"
+              class="delete-btn-icon visit-remove-btn"
+              data-role="remove-venta-item"
+              aria-label="Eliminar producto"
+              title="Eliminar producto"
+            >
+              ×
+            </button>
+          </div>
+
+          <div class="pedido-side-actions">
+            <label class="pedido-pass-toggle-inline">
+              <input type="checkbox" data-role="item-pase-toggle" ${usaPase ? 'checked' : ''} />
+              <span>Pase?</span>
+            </label>
+
+            <div class="qty-stepper" data-role="qty-stepper">
+              <button type="button" class="qty-btn" data-role="qty-minus">−</button>
+              <input
+                type="number"
+                min="1"
+                step="1"
+                value="${cantidad || 1}"
+                data-role="venta-cantidad"
+              />
+              <button type="button" class="qty-btn" data-role="qty-plus">+</button>
+            </div>
+          </div>
+        </div>
+
+        <div class="pedido-inline-extras ${usaPase ? 'is-open' : ''}" data-role="item-pase-wrap">
+          <div class="conditional-box">
+            <div class="two-col-grid">
+              <label>
+                Monto pase
+                <input
+                  type="number"
+                  min="0"
+                  step="0.01"
+                  value="${item.pase_monto || ''}"
+                  data-role="item-pase-monto"
+                  placeholder="Ej. 60.00"
+                />
+              </label>
+
+              <label>
+                ¿A quién se pasó?
+                <input
+                  type="text"
+                  value="${escapeHtml(item.pase_destinatario || '')}"
+                  data-role="item-pase-destinatario"
+                  placeholder="Nombre, negocio o tienda"
+                />
+              </label>
+            </div>
+          </div>
+        </div>
+      </div>
+    `;
+  }).join('');
+
+  ventaItemsList.querySelectorAll('[data-row-id]').forEach((row) => {
+    const rowId = row.getAttribute('data-row-id');
+    const item = ventaItems.find((x) => x.row_id === rowId);
+    if (!item) return;
+
+    const select = row.querySelector('[data-role="venta-producto"]');
+    const qtyInput = row.querySelector('[data-role="venta-cantidad"]');
+    const minusBtn = row.querySelector('[data-role="qty-minus"]');
+    const plusBtn = row.querySelector('[data-role="qty-plus"]');
+    const removeBtn = row.querySelector('[data-role="remove-venta-item"]');
+
+    const paseToggle = row.querySelector('[data-role="item-pase-toggle"]');
+    const paseWrap = row.querySelector('[data-role="item-pase-wrap"]');
+    const paseMontoInput = row.querySelector('[data-role="item-pase-monto"]');
+    const paseDestinatarioInput = row.querySelector('[data-role="item-pase-destinatario"]');
+    const subtotalBox = row.querySelector('[data-role="item-subtotal"]');
+
+    const clampCantidad = (rawValue) => {
+      const prod = getProductoById(item.producto_id);
+      let val = Math.max(1, Number(rawValue || 1));
+
+      if (prod?.tipo_producto === 'comun') {
+        const stock = getProductoStock(prod);
+        if (stock > 0) val = Math.min(val, stock);
+      } else if (prod?.tipo_producto === 'unico') {
+        val = 1;
+      }
+
+      return Math.trunc(val);
+    };
+
+    const refreshRowSubtotalOnly = () => {
+      const prod = getProductoById(item.producto_id);
+      const precioNormal = getProductoPrecio(prod);
+      const cantidadActual = Number(item.cantidad || 1);
+      const usaPase = item.es_pase === true;
+      const paseMonto = Number(item.pase_monto || 0);
+      const precioAplicado = usaPase && paseMonto > 0 ? paseMonto : precioNormal;
+      const subtotal = precioAplicado * cantidadActual;
+
+      if (subtotalBox) {
+        subtotalBox.textContent = soles(subtotal);
+      }
+
+      refreshVentaTotal();
+    };
+
+    select.addEventListener('change', () => {
+      item.producto_id = select.value;
+      item.cantidad = 1;
+      renderVentaItems();
+    });
+
+    qtyInput.addEventListener('input', () => {
+      item.cantidad = clampCantidad(qtyInput.value);
+      qtyInput.value = String(item.cantidad);
+      refreshRowSubtotalOnly();
+    });
+
+    minusBtn.addEventListener('click', () => {
+      item.cantidad = clampCantidad(Number(item.cantidad || 1) - 1);
+      qtyInput.value = String(item.cantidad);
+      refreshRowSubtotalOnly();
+    });
+
+    plusBtn.addEventListener('click', () => {
+      item.cantidad = clampCantidad(Number(item.cantidad || 1) + 1);
+      qtyInput.value = String(item.cantidad);
+      refreshRowSubtotalOnly();
+    });
+
+    paseToggle.addEventListener('change', () => {
+      item.es_pase = paseToggle.checked;
+
+      if (!item.es_pase) {
+        item.pase_monto = '';
+        item.pase_destinatario = '';
+      }
+
+      paseWrap.classList.toggle('is-open', item.es_pase);
+
+      if (paseMontoInput) paseMontoInput.value = item.pase_monto || '';
+      if (paseDestinatarioInput) paseDestinatarioInput.value = item.pase_destinatario || '';
+
+      refreshRowSubtotalOnly();
+    });
+
+    if (paseMontoInput) {
+      paseMontoInput.addEventListener('input', () => {
+        item.pase_monto = paseMontoInput.value;
+        refreshRowSubtotalOnly();
+      });
+    }
+
+    if (paseDestinatarioInput) {
+      paseDestinatarioInput.addEventListener('input', () => {
+        item.pase_destinatario = paseDestinatarioInput.value;
+      });
+    }
+
+    removeBtn.addEventListener('click', () => {
+      ventaItems = ventaItems.filter((x) => x.row_id !== rowId);
+      renderVentaItems();
+    });
+  });
+
+  refreshVentaTotal();
+}
+
+    function resetVentaForm({ preserveMessage = false } = {}) {
+      selectedClient = null;
+      ventaItems = [];
+      ventaForm.reset();
+      tipoVentaSelect.value = 'producto';
+      fechaVentaInput.value = toDateTimeLocalValue(new Date());
+      descripcionServicioInput.value = '';
+      montoServicioInput.value = '';
+      productosSection.style.display = '';
+      servicioSection.style.display = 'none';
+
+      servicioTieneCostoToggle.checked = false;
+      servicioCostoWrap.style.display = 'none';
+      costoServicioInput.value = '';
+
+      servicioPaseToggle.checked = false;
+      servicioPaseWrap.style.display = 'none';
+      servicioPaseMontoInput.value = '';
+      servicioPaseDestinatarioInput.value = '';
+
+      if (!preserveMessage) {
+        ventaFormMessage.textContent = '';
+      }
+
+      clienteSearchInput.value = '';
+      clearClienteResults();
+      renderSelectedClient();
+      renderVentaItems();
+      refreshVentaTotal();
+    }
+
+    async function loadClientes() {
+      const { data, error } = await supabaseClient
+        .from('clientes')
+        .select('id, nombres, apellidos, telefono, notas, tipo_cliente')
+        .order('created_at', { ascending: false });
+
+      if (!error) {
+        clientes = data || [];
+      }
+    }
+
+    async function loadProductos() {
+      const { data, error } = await supabaseClient
+        .from('productos')
+        .select(`
+          id,
+          tipo_producto,
+          nombre,
+          color,
+          modelo,
+          detalles,
+          cantidad,
+          precio_venta,
+          costo,
+          es_activo
+        `)
+        .eq('es_activo', true)
+        .order('nombre', { ascending: true });
+
+      if (error) {
+        console.error('Error loadProductos:', error);
+        productos = [];
+        return;
+      }
+
+      productos = data || [];
+    }
+
+    async function loadVentasRecientes() {
+      const { data, error } = await supabaseClient
+        .from('pedidos')
+        .select(`
+          id,
+          cliente_id,
+          fecha_pedido,
+          notas,
+          total_pedido,
+          tipo_venta,
+          deleted_at,
+          cliente_nombre_snapshot,
+          cliente_tipo_snapshot,
+          cliente_telefono_snapshot,
+          servicio_descripcion,
+          servicio_costo,
+          servicio_tiene_costo,
+          es_pase,
+          pase_monto,
+          pase_destinatario,
+          clientes (
+            nombres,
+            apellidos,
+            tipo_cliente,
+            telefono
+          ),
+          venta_detalles (
+            id,
+            producto_id,
+            tipo_producto_snapshot,
+            nombre_snapshot,
+            cantidad,
+            precio_unitario_snapshot,
+            costo_unitario_snapshot,
+            subtotal,
+            utilidad_subtotal,
+            es_pase,
+            pase_monto,
+            pase_destinatario
+          )
+        `)
+        .is('deleted_at', null)
+        .order('fecha_pedido', { ascending: false })
+        .limit(12);
+
+      if (error) {
+        ventasHistoryList.innerHTML = `<div class="empty-state">Error al cargar ventas recientes.</div>`;
+        return;
+      }
+
+      ventas = data || [];
+
+      if (!ventas.length) {
+        ventasHistoryList.innerHTML = `<div class="empty-state">Aún no hay ventas registradas.</div>`;
+        return;
+      }
+
+      ventasHistoryList.innerHTML = ventas.map((venta) => {
+        const detalles = Array.isArray(venta.venta_detalles) ? venta.venta_detalles : [];
+
+        const totalDetalles = detalles.reduce((acc, item) => {
+          const subtotal = Number(item?.subtotal ?? 0);
+          const precioUnitario = Number(item?.precio_unitario_snapshot ?? 0);
+          const cantidad = Number(item?.cantidad ?? 0);
+
+          if (subtotal > 0) return acc + subtotal;
+          return acc + (precioUnitario * cantidad);
+        }, 0);
+
+        const totalMostrado = Number(venta.total_pedido ?? 0) > 0
+          ? Number(venta.total_pedido)
+          : totalDetalles;
+
+        const clienteNombre = (() => {
+          if (venta?.clientes) {
+            const liveName = `${venta.clientes.nombres || ''} ${venta.clientes.apellidos || ''}`.trim();
+            if (liveName) return liveName;
+          }
+          if (venta?.cliente_nombre_snapshot) return venta.cliente_nombre_snapshot;
+          return 'Cliente eliminado';
+        })();
+
+        const clienteTipo = (() => {
+          if (venta?.clientes?.tipo_cliente) return venta.clientes.tipo_cliente;
+          if (venta?.cliente_tipo_snapshot) return venta.cliente_tipo_snapshot;
+          return 'persona';
+        })();
+
+        const clienteTelefono = (() => {
+          if (venta?.clientes?.telefono) return venta.clientes.telefono;
+          if (venta?.cliente_telefono_snapshot) return venta.cliente_telefono_snapshot;
+          return '';
+        })();
+
+        const clienteEliminado = !venta.cliente_id && !!venta.cliente_nombre_snapshot;
+        const esServicio = venta.tipo_venta === 'servicio';
+
+        return `
+          <article class="history-card">
+            <div class="history-card-top">
+              <div>
+                <h3>${escapeHtml(clienteNombre)}</h3>
+                <p>${formatDateTime(venta.fecha_pedido)}</p>
+              </div>
+
+              <div style="display:flex; align-items:center; gap:10px;">
+                <div class="price-tag">${soles(totalMostrado)}</div>
+                <button
+                  type="button"
+                  class="delete-btn-icon"
+                  title="Eliminar venta"
+                  data-role="delete-venta"
+                  data-id="${venta.id}"
+                  aria-label="Eliminar venta"
+                >
+                  ×
+                </button>
+              </div>
+            </div>
+
+            <p class="history-note" style="margin-top:0; margin-bottom:8px;">
+              ${clienteTipo === 'negocio' ? 'Negocio' : 'Persona'}
+              ${clienteTelefono ? ` · ${escapeHtml(clienteTelefono)}` : ''}
+              ${clienteEliminado ? ' · Cliente eliminado del sistema' : ''}
+              ${esServicio ? ' · Servicio' : ' · Productos'}
+            </p>
+
+            <div class="history-recipes">
+              ${esServicio
+                ? `
+                  <span class="recipe-chip">
+                    ${escapeHtml(venta.servicio_descripcion || 'Servicio')}
+                  </span>
+                  ${venta.es_pase && venta.pase_destinatario
+                    ? `<span class="recipe-chip recipe-chip-pass">PASE - ${escapeHtml(venta.pase_destinatario)}</span>`
+                    : ''
+                  }
+                  ${venta.servicio_tiene_costo
+                    ? `<span class="recipe-chip">Costo: ${soles(venta.servicio_costo || 0)}</span>`
+                    : `<span class="recipe-chip" style="opacity:.75;">Sin costo para margen</span>`
+                  }
+                `
+                : detalles.length
+                  ? detalles.map((item) => `
+                    <span class="recipe-chip ${item?.es_pase ? 'recipe-chip-pass' : ''}">
+                      ${escapeHtml(item?.nombre_snapshot || 'Producto')}
+                      x${Number(item?.cantidad || 0)}
+                      ${item?.es_pase && item?.pase_destinatario ? ` · PASE - ${escapeHtml(item.pase_destinatario)}` : ''}
+                    </span>
+                  `).join('')
+                  : '<span class="recipe-chip" style="opacity:.75;">Sin detalles</span>'
+              }
+            </div>
+
+            ${venta.notas ? `<p class="history-note" style="margin-top:6px;">${escapeHtml(venta.notas)}</p>` : ''}
+          </article>
+        `;
+      }).join('');
+
+      ventasHistoryList.querySelectorAll('button[data-role="delete-venta"]').forEach((btn) => {
+        btn.addEventListener('click', () => handleDeleteVenta(btn));
+      });
+    }
+
+    async function handleDeleteVenta(btn) {
+      const ventaId = btn.getAttribute('data-id');
+      const confirmar = confirm('¿Eliminar esta venta? Esta acción no se puede deshacer.');
+      if (!confirmar) return;
+
+      btn.disabled = true;
+      setFormMessage('Eliminando venta...', '#7e7066');
+
+      const { error } = await supabaseClient
+        .from('pedidos')
+        .update({ deleted_at: new Date().toISOString() })
+        .eq('id', ventaId);
+
+      if (error) {
+        setFormMessage(`Error al eliminar venta: ${error.message}`, '#c14646');
+        btn.disabled = false;
+        return;
+      }
+
+      setFormMessage('Venta eliminada correctamente.', '#2f7d57');
+      await loadVentasRecientes();
+    }
+
+    function buildValidItemsFromForm() {
+      const validItems = [];
+
+      for (const rawItem of ventaItems) {
+        const item = {
+          producto_id: String(rawItem.producto_id || '').trim(),
+          cantidad: Number(rawItem.cantidad || 0),
+          es_pase: rawItem.es_pase === true,
+          pase_monto: rawItem.pase_monto === '' ? null : Number(rawItem.pase_monto),
+          pase_destinatario: String(rawItem.pase_destinatario || '').trim()
+        };
+
+        if (!item.producto_id || !Number.isFinite(item.cantidad) || item.cantidad <= 0) {
+          continue;
+        }
+
+        const prod = getProductoById(item.producto_id);
+        if (!prod) {
+          throw new Error(`Uno de los productos seleccionados no existe o no está activo: ${item.producto_id}`);
+        }
+
+        const stock = getProductoStock(prod);
+
+        if (prod.tipo_producto === 'comun') {
+          if (stock <= 0) {
+            throw new Error(`El producto común "${getProductoDisplayName(prod)}" no tiene stock disponible.`);
+          }
+
+          if (item.cantidad > stock) {
+            throw new Error(`La cantidad de "${getProductoDisplayName(prod)}" excede el stock disponible (${stock}).`);
+          }
+        }
+
+        if (prod.tipo_producto === 'unico') {
+          item.cantidad = 1;
+        }
+
+        if (item.es_pase) {
+          if (!Number.isFinite(item.pase_monto) || item.pase_monto <= 0) {
+            throw new Error(`Debes ingresar un monto válido en Pase para "${getProductoDisplayName(prod)}".`);
+          }
+
+          if (!item.pase_destinatario) {
+            throw new Error(`Debes indicar a quién se pasó "${getProductoDisplayName(prod)}".`);
+          }
+        } else {
+          item.pase_monto = null;
+          item.pase_destinatario = null;
+        }
+
+        validItems.push(item);
+      }
+
+      return validItems;
+    }
+
+    tipoVentaSelect.addEventListener('change', () => {
+      const tipo = tipoVentaSelect.value;
+
+      if (tipo === 'producto') {
+        productosSection.style.display = '';
+        servicioSection.style.display = 'none';
+      } else {
+        productosSection.style.display = 'none';
+        servicioSection.style.display = '';
+      }
+
+      refreshVentaTotal();
+    });
+
+    clienteSearchInput.addEventListener('input', () => {
+      const term = clienteSearchInput.value.trim().toLowerCase();
+
+      if (!term) {
+        clearClienteResults();
+        return;
+      }
+
+      const filtrados = clientes
+        .filter((cliente) => getClienteSearchText(cliente).includes(term))
+        .slice(0, 8);
+
+      renderClienteResults(filtrados);
+    });
+
+    clienteSearchInput.addEventListener('blur', () => {
+      setTimeout(() => {
+        clearClienteResults();
+      }, 120);
+    });
+
+    clearSelectedClientBtn.addEventListener('click', () => {
+      selectedClient = null;
+      renderSelectedClient();
+      clienteSearchInput.focus();
+    });
+
+    addVentaItemBtn.addEventListener('click', () => {
+      const disponibles = getProductosDisponiblesParaSelect();
+
+      if (!disponibles.length) {
+        setFormMessage('No hay productos activos disponibles para vender.', '#c14646');
+        return;
+      }
+
+      ventaItems.push(createVentaItem());
+      renderVentaItems();
+    });
+
+    resetVentaFormBtn.addEventListener('click', () => {
+      resetVentaForm();
+    });
+
+    montoServicioInput.addEventListener('input', () => {
+      refreshVentaTotal();
+    });
+
+    servicioTieneCostoToggle.addEventListener('change', () => {
+      servicioCostoWrap.style.display = servicioTieneCostoToggle.checked ? '' : 'none';
+      if (!servicioTieneCostoToggle.checked) {
+        costoServicioInput.value = '';
+      }
+    });
+
+    servicioPaseToggle.addEventListener('change', () => {
+      servicioPaseWrap.style.display = servicioPaseToggle.checked ? '' : 'none';
+      if (!servicioPaseToggle.checked) {
+        servicioPaseMontoInput.value = '';
+        servicioPaseDestinatarioInput.value = '';
+      }
+      refreshVentaTotal();
+    });
+
+    servicioPaseMontoInput.addEventListener('input', refreshVentaTotal);
+
+    ventaForm.addEventListener('submit', async (e) => {
+      e.preventDefault();
+      if (isSubmitting) return;
+
+      try {
+        const tipoVenta = tipoVentaSelect.value;
+        const fechaRaw = fechaVentaInput.value;
+
+        if (!fechaRaw) {
+          setFormMessage('Ingresa una fecha válida para la venta.', '#c14646');
+          return;
+        }
+
+        const fechaObj = new Date(fechaRaw);
+        if (Number.isNaN(fechaObj.getTime())) {
+          setFormMessage('La fecha de la venta no es válida.', '#c14646');
+          return;
+        }
+
+        const fechaIso = fechaObj.toISOString();
+
+        const clienteId = selectedClient?.id || null;
+        const clienteNombreSnapshot = selectedClient ? getClienteDisplayName(selectedClient) : null;
+        const clienteTipoSnapshot = selectedClient ? selectedClient.tipo_cliente : null;
+        const clienteTelefonoSnapshot = selectedClient ? selectedClient.telefono : null;
+
+        let totalVenta = 0;
+        const detallesToInsert = [];
+
+        let servicioDescripcion = null;
+        let servicioTieneCosto = false;
+        let servicioCosto = null;
+        let pedidoEsPase = false;
+        let pedidoPaseMonto = null;
+        let pedidoPaseDestinatario = null;
+
+        if (tipoVenta === 'producto') {
+          const validItems = buildValidItemsFromForm();
+
+          if (!validItems.length) {
+            setFormMessage('Añade al menos un producto válido a la venta.', '#c14646');
+            return;
+          }
+
+          for (const item of validItems) {
+            const prod = getProductoById(item.producto_id);
+            const precioNormal = getProductoPrecio(prod);
+            const costo = getProductoCosto(prod);
+            const precioAplicado = item.es_pase ? Number(item.pase_monto) : precioNormal;
+            const subtotal = precioAplicado * item.cantidad;
+
+            totalVenta += subtotal;
+
+            detallesToInsert.push({
+              producto_id: prod.id,
+              tipo_producto_snapshot: prod.tipo_producto || null,
+              nombre_snapshot: getProductoDisplayName(prod),
+              cantidad: item.cantidad,
+              precio_unitario_snapshot: precioAplicado,
+              costo_unitario_snapshot: costo,
+              subtotal,
+              utilidad_subtotal: costo != null
+                ? subtotal - (costo * item.cantidad)
+                : null,
+              es_pase: item.es_pase,
+              pase_monto: item.es_pase ? Number(item.pase_monto) : null,
+              pase_destinatario: item.es_pase ? item.pase_destinatario : null
+            });
+          }
+        } else {
+          const descripcion = descripcionServicioInput.value.trim();
+          const montoNormal = Number(montoServicioInput.value || 0);
+          const tieneCosto = servicioTieneCostoToggle.checked;
+          const costoServicio = Number(costoServicioInput.value || 0);
+          const esPase = servicioPaseToggle.checked;
+          const paseMonto = Number(servicioPaseMontoInput.value || 0);
+          const paseDestinatario = servicioPaseDestinatarioInput.value.trim();
+
+          if (!descripcion) {
+            setFormMessage('Escribe una descripción para el servicio.', '#c14646');
+            return;
+          }
+
+          if (!Number.isFinite(montoNormal) || montoNormal <= 0) {
+            setFormMessage('Escribe un monto válido para el servicio.', '#c14646');
+            return;
+          }
+
+          if (tieneCosto && (!Number.isFinite(costoServicio) || costoServicio < 0)) {
+            setFormMessage('Escribe un costo válido para el servicio.', '#c14646');
+            return;
+          }
+
+          if (esPase) {
+            if (!Number.isFinite(paseMonto) || paseMonto <= 0) {
+              setFormMessage('Escribe un monto válido para el pase del servicio.', '#c14646');
+              return;
+            }
+
+            if (!paseDestinatario) {
+              setFormMessage('Escribe a quién se pasó el servicio.', '#c14646');
+              return;
+            }
+          }
+
+          servicioDescripcion = descripcion;
+          servicioTieneCosto = tieneCosto;
+          servicioCosto = tieneCosto ? costoServicio : null;
+          pedidoEsPase = esPase;
+          pedidoPaseMonto = esPase ? paseMonto : null;
+          pedidoPaseDestinatario = esPase ? paseDestinatario : null;
+
+          totalVenta = esPase ? paseMonto : montoNormal;
+        }
+
+        setSubmittingState(true);
+        setFormMessage('Guardando venta...', '#7e7066');
+
+        const { data: pedidoInsertado, error: pedidoError } = await supabaseClient
+          .from('pedidos')
+          .insert([{
+            cliente_id: clienteId,
+            fecha_pedido: fechaIso,
+            notas: ventaNotasInput.value.trim() || null,
+            total_pedido: totalVenta,
+            cuenta_como_visita: false,
+            cliente_nombre_snapshot: clienteNombreSnapshot,
+            cliente_tipo_snapshot: clienteTipoSnapshot,
+            cliente_telefono_snapshot: clienteTelefonoSnapshot,
+            tipo_venta: tipoVenta,
+            servicio_descripcion: tipoVenta === 'servicio' ? servicioDescripcion : null,
+            servicio_tiene_costo: tipoVenta === 'servicio' ? servicioTieneCosto : false,
+            servicio_costo: tipoVenta === 'servicio' ? servicioCosto : null,
+            es_pase: tipoVenta === 'servicio' ? pedidoEsPase : false,
+            pase_monto: tipoVenta === 'servicio' ? pedidoPaseMonto : null,
+            pase_destinatario: tipoVenta === 'servicio' ? pedidoPaseDestinatario : null
+          }])
+          .select()
+          .single();
+
+        if (pedidoError) {
+          setFormMessage(`Error al guardar venta: ${pedidoError.message}`, '#c14646');
+          return;
+        }
+
+        const pedidoId = pedidoInsertado.id;
+
+        if (tipoVenta === 'producto') {
+          const detallesConPedido = detallesToInsert.map((d) => ({
+            ...d,
+            pedido_id: pedidoId
+          }));
+
+          const { error: detallesError } = await supabaseClient
+            .from('venta_detalles')
+            .insert(detallesConPedido);
+
+          if (detallesError) {
+            setFormMessage(`Venta creada, pero error al guardar detalles: ${detallesError.message}`, '#c14646');
+            return;
+          }
+
+          const validItems = buildValidItemsFromForm();
+
+          for (const item of validItems) {
+            const prod = getProductoById(item.producto_id);
+
+            if (prod?.tipo_producto === 'comun') {
+              const nuevoStock = Math.max(0, getProductoStock(prod) - item.cantidad);
+
+              const { error: stockError } = await supabaseClient
+                .from('productos')
+                .update({ cantidad: nuevoStock })
+                .eq('id', item.producto_id);
+
+              if (stockError) {
+                console.error('Error al actualizar stock común:', stockError);
+              }
+            }
+
+            if (prod?.tipo_producto === 'unico') {
+              const { error: stockUnicoError } = await supabaseClient
+                .from('productos')
+                .update({ cantidad: 0, es_activo: false })
+                .eq('id', item.producto_id);
+
+              if (stockUnicoError) {
+                console.error('Error al desactivar producto único vendido:', stockUnicoError);
+              }
+            }
+          }
+        }
+
+        resetVentaForm({ preserveMessage: true });
+        setFormMessage(`Venta registrada correctamente. Total: ${soles(totalVenta)}.`, '#2f7d57');
+
+        await loadProductos();
+        await loadVentasRecientes();
+      } catch (err) {
+        console.error('Error al guardar venta:', err);
+        setFormMessage(`Error: ${err.message || 'No se pudo guardar la venta.'}`, '#c14646');
+      } finally {
+        setSubmittingState(false);
+      }
+    });
+
+    logoutBtn.addEventListener('click', async () => {
+      await supabaseClient.auth.signOut();
+      window.location.href = './login.html';
+    });
+
+    document.addEventListener('click', (event) => {
+      const target = event.target;
+      const insideSearch =
+        target.closest('#clienteResults') ||
+        target.closest('label')?.querySelector('#clienteSearchInput');
+      const isSearchInput = target.id === 'clienteSearchInput';
+
+      if (!isSearchInput && !insideSearch) {
+        clearClienteResults();
+      }
+    });
+
+    (async () => {
+      await protectPage();
+      await Promise.all([loadClientes(), loadProductos()]);
+      resetVentaForm();
+      await loadVentasRecientes();
+    })();
+	
+	(function () {
+    const splitLayout = document.getElementById('mainSplitLayout');
+    const splitBtn = document.getElementById('splitResizerBtn');
+    if (!splitLayout || !splitBtn) return;
+
+    const states = ['split-layout--left-wide', 'split-layout--balanced', 'split-layout--right-wide'];
+    let index = 1;
+
+    const applyState = () => {
+      splitLayout.classList.remove(...states);
+      splitLayout.classList.add(states[index]);
+    };
+
+    splitBtn.addEventListener('click', (event) => {
+      const rect = splitBtn.getBoundingClientRect();
+      const clickX = event.clientX - rect.left;
+      const goLeft = clickX < rect.width / 2;
+
+      if (goLeft) {
+        index = Math.max(0, index - 1);
+      } else {
+        index = Math.min(states.length - 1, index + 1);
+      }
+
+      applyState();
+    });
+
+    applyState();
+  })();
+	
+  </script>
+</body>
+</html>

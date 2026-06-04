@@ -1,0 +1,912 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Dashboard | YORKY CRM</title>
+  <link rel="stylesheet" href="./css/styles.css" />
+</head>
+<body>
+  <div class="brand-grain-bg" aria-hidden="true">
+    <div class="brand-grain-layer brand-grain-layer-one"></div>
+    <div class="brand-grain-layer brand-grain-layer-two"></div>
+    <div class="brand-grain-layer brand-grain-layer-three"></div>
+  </div>
+
+  <main class="dashboard-page page-enter">
+    <div class="dashboard-shell">
+      <header class="topbar page-enter-frag page-enter-frag-1">
+        <div class="brand-block">
+          <a href="./dashboard.html" class="brand-mark" aria-label="YORKY CRM">
+            <img
+              src="./assets/logo-nico.png"
+              alt="YORKY CRM"
+              class="brand-logo-img"
+              width="220"
+              height="52"
+              loading="lazy"
+            />
+          </a>
+          <p class="brand-caption">
+            Panel interno para gestionar clientes, stock y ventas de YORKY.
+          </p>
+        </div>
+
+        <div class="topbar-actions">
+          <span id="userEmail" class="user-pill">Cargando...</span>
+          <button id="logoutBtn" class="danger-btn" type="button">Cerrar sesión</button>
+        </div>
+      </header>
+
+      <section class="dashboard-grid page-enter-frag page-enter-frag-2">
+        <article class="card kpi-card reveal-on-scroll reveal-delay-1">
+          <p class="kpi-label">Clientes registrados</p>
+          <p id="kpiClientes" class="kpi-value">--</p>
+          <p class="kpi-note">Total de clientes en la base de datos.</p>
+        </article>
+
+        <article class="card kpi-card reveal-on-scroll reveal-delay-2">
+          <p class="kpi-label">Ventas registradas</p>
+          <p id="kpiPedidos" class="kpi-value">--</p>
+          <p class="kpi-note">Histórico acumulado de ventas (productos y servicios).</p>
+        </article>
+
+        <article class="card kpi-card reveal-on-scroll reveal-delay-3">
+          <p class="kpi-label">Ventas de hoy</p>
+          <p id="kpiVentasHoy" class="kpi-value">--</p>
+          <p class="kpi-note">Monto total vendido en la fecha actual.</p>
+        </article>
+
+        <article class="card kpi-card reveal-on-scroll reveal-delay-4">
+          <p class="kpi-label">Ventas del mes</p>
+          <p id="kpiVentasMes" class="kpi-value">--</p>
+          <p class="kpi-note">Monto acumulado de ventas en el mes actual.</p>
+        </article>
+
+        <article class="card kpi-card reveal-on-scroll reveal-delay-5">
+          <p class="kpi-label">Margen de hoy</p>
+          <p id="kpiMargenHoy" class="kpi-value">--</p>
+          <p class="kpi-note" id="kpiMargenHoyNote">
+            Calculando margen y costo de hoy…
+          </p>
+
+          <div class="form-actions" style="margin-top:12px; justify-content:flex-start;">
+            <button
+              type="button"
+              class="secondary-btn mini-btn"
+              id="verMargenesBtn"
+            >
+              Ver detalle de márgenes
+            </button>
+          </div>
+        </article>
+
+        <article class="card kpi-card reveal-on-scroll reveal-delay-6" id="kpiInsumosCriticosCard">
+          <p class="kpi-label">Productos con stock bajo</p>
+          <p id="kpiInsumosCriticos" class="kpi-value">--</p>
+          <p class="kpi-note">Productos comunes en o por debajo del stock mínimo.</p>
+        </article>
+
+        <article class="card wide-card reveal-on-scroll">
+          <h2>Accesos rápidos</h2>
+          <p>Entra a los módulos principales del sistema YORKY.</p>
+
+          <div class="quick-links">
+            <button type="button" class="quick-link" data-link="./clientes.html">
+              <strong>Clientes</strong>
+              <span>Registrar, buscar y revisar clientes.</span>
+            </button>
+
+            <button type="button" class="quick-link" data-link="./ingredientes.html">
+              <strong>Stock de productos</strong>
+              <span>Gestionar productos únicos y comunes, con su stock.</span>
+            </button>
+
+            <button type="button" class="quick-link" data-link="./pedidos.html">
+              <strong>Registrar venta</strong>
+              <span>Registrar ventas de productos o servicios por cliente.</span>
+            </button>
+
+            <button type="button" class="quick-link" data-link="./ventas-dia.html">
+              <strong>Ventas</strong>
+              <span>Ver ventas totales, márgenes y exportar a CSV.</span>
+            </button>
+          </div>
+        </article>
+
+        <article class="card wide-card dashboard-sales-card reveal-on-scroll">
+          <div class="dashboard-panel-head">
+            <div>
+              <h2>Ventas por fechas</h2>
+              <p>Consulta el total vendido y el ticket promedio en un rango de fechas.</p>
+            </div>
+          </div>
+
+          <div class="dashboard-filter-grid">
+            <label>
+              Desde
+              <input type="date" id="fechaInicioFiltro" />
+            </label>
+
+            <label>
+              Hasta
+              <input type="date" id="fechaFinFiltro" />
+            </label>
+
+            <div class="dashboard-filter-actions">
+              <button type="button" class="primary-btn" id="aplicarFiltroBtn">Aplicar filtro</button>
+              <button type="button" class="secondary-btn" id="resetFiltroBtn">Mes actual</button>
+            </div>
+          </div>
+
+          <div class="sales-summary-grid">
+            <div class="sales-summary-box">
+              <span>Total vendido</span>
+              <strong id="ventasRangoTotal">S/ 0.00</strong>
+            </div>
+
+            <div class="sales-summary-box">
+              <span>Ventas en rango</span>
+              <strong id="pedidosRangoTotal">0</strong>
+            </div>
+
+            <div class="sales-summary-box">
+              <span>Ticket promedio</span>
+              <strong id="ticketPromedioRango">S/ 0.00</strong>
+            </div>
+          </div>
+        </article>
+
+        <article
+          class="card wide-card reveal-on-scroll"
+          id="stockAlertsCard"
+          style="cursor:pointer;"
+          title="Abrir productos con filtro de stock bajo"
+        >
+          <div class="dashboard-panel-head">
+            <div>
+              <h2>Alertas de stock</h2>
+              <p>Productos comunes con stock actual menor o igual al mínimo definido.</p>
+            </div>
+          </div>
+
+          <div id="stockBajoList" class="history-list">
+            <div class="empty-state">Cargando alertas de stock...</div>
+          </div>
+        </article>
+
+        <article class="card full-card reveal-on-scroll">
+          <div class="dashboard-panel-head">
+            <div>
+              <h2>Ventas del día</h2>
+              <p>Resumen rápido de las ventas registradas hoy.</p>
+            </div>
+            <div class="badge" id="pedidosHoyBadge">0 ventas</div>
+          </div>
+
+          <div id="pedidosHoyList" class="history-list">
+            <div class="empty-state">Cargando ventas del día...</div>
+          </div>
+        </article>
+
+        <article class="card full-card reveal-on-scroll">
+          <div class="dashboard-panel-head">
+            <div>
+              <h2>Ventas recientes</h2>
+              <p>Últimas ventas registradas con cliente, fecha y total.</p>
+            </div>
+          </div>
+
+          <div id="pedidosRecientesList" class="history-list">
+            <div class="empty-state">Cargando ventas recientes...</div>
+          </div>
+        </article>
+      </section>
+    </div>
+  </main>
+
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <script src="./js/supabase.js"></script>
+
+  <script>
+    const supabaseClient = window.supabaseClient;
+
+    if (!supabaseClient) {
+      throw new Error('No se encontró window.supabaseClient. Verifica js/supabase.js');
+    }
+
+    const userEmailEl = document.getElementById('userEmail');
+    const logoutBtn = document.getElementById('logoutBtn');
+
+    const kpiClientes = document.getElementById('kpiClientes');
+    const kpiPedidos = document.getElementById('kpiPedidos');
+    const kpiVentasHoy = document.getElementById('kpiVentasHoy');
+    const kpiVentasMes = document.getElementById('kpiVentasMes');
+    const kpiInsumosCriticos = document.getElementById('kpiInsumosCriticos');
+    const kpiInsumosCriticosCard = document.getElementById('kpiInsumosCriticosCard');
+
+    const kpiMargenHoy = document.getElementById('kpiMargenHoy');
+    const kpiMargenHoyNote = document.getElementById('kpiMargenHoyNote');
+    const verMargenesBtn = document.getElementById('verMargenesBtn');
+
+    const fechaInicioFiltro = document.getElementById('fechaInicioFiltro');
+    const fechaFinFiltro = document.getElementById('fechaFinFiltro');
+    const aplicarFiltroBtn = document.getElementById('aplicarFiltroBtn');
+    const resetFiltroBtn = document.getElementById('resetFiltroBtn');
+
+    const ventasRangoTotal = document.getElementById('ventasRangoTotal');
+    const pedidosRangoTotal = document.getElementById('pedidosRangoTotal');
+    const ticketPromedioRango = document.getElementById('ticketPromedioRango');
+
+    const pedidosHoyBadge = document.getElementById('pedidosHoyBadge');
+    const pedidosHoyList = document.getElementById('pedidosHoyList');
+    const pedidosRecientesList = document.getElementById('pedidosRecientesList');
+    const stockBajoList = document.getElementById('stockBajoList');
+    const stockAlertsCard = document.getElementById('stockAlertsCard');
+
+    function soles(value) {
+      return `S/ ${Number(value || 0).toFixed(2)}`;
+    }
+
+    function formatNumber(value) {
+      return Number(value || 0).toLocaleString('es-PE', {
+        minimumFractionDigits: 0,
+        maximumFractionDigits: 3
+      });
+    }
+
+    function formatDateTime(value) {
+      if (!value) return '-';
+      return new Date(value).toLocaleString('es-PE', {
+        dateStyle: 'medium',
+        timeStyle: 'short'
+      });
+    }
+
+    function formatDateOnly(date) {
+      const y = date.getFullYear();
+      const m = String(date.getMonth() + 1).padStart(2, '0');
+      const d = String(date.getDate()).padStart(2, '0');
+      return `${y}-${m}-${d}`;
+    }
+
+    function escapeHtml(value) {
+      return String(value ?? '')
+        .replaceAll('&', '&amp;')
+        .replaceAll('<', '&lt;')
+        .replaceAll('>', '&gt;')
+        .replaceAll('"', '&quot;')
+        .replaceAll("'", '&#39;');
+    }
+
+    function getTipoClienteLabel(tipo) {
+      return tipo === 'negocio' ? 'Negocio' : 'Persona';
+    }
+
+    function getPedidoClienteNombre(pedido) {
+      if (pedido?.clientes) {
+        const liveName = `${pedido.clientes.nombres || ''} ${pedido.clientes.apellidos || ''}`.trim();
+        if (liveName) return liveName;
+      }
+
+      if (pedido?.cliente_nombre_snapshot) {
+        return pedido.cliente_nombre_snapshot;
+      }
+
+      return 'Cliente eliminado';
+    }
+
+    function getPedidoClienteTipo(pedido) {
+      if (pedido?.clientes?.tipo_cliente) return pedido.clientes.tipo_cliente;
+      if (pedido?.cliente_tipo_snapshot) return pedido.cliente_tipo_snapshot;
+      return 'persona';
+    }
+
+    function getPedidoClienteTelefono(pedido) {
+      if (pedido?.clientes?.telefono) return pedido.clientes.telefono;
+      if (pedido?.cliente_telefono_snapshot) return pedido.cliente_telefono_snapshot;
+      return '';
+    }
+
+    function renderClienteMeta(pedido) {
+      const clienteTipo = getPedidoClienteTipo(pedido);
+      const clienteTelefono = getPedidoClienteTelefono(pedido);
+      const clienteEliminado = !pedido?.cliente_id && !!pedido?.cliente_nombre_snapshot;
+      const tipoVenta = pedido?.tipo_venta === 'servicio' ? 'Servicio' : 'Producto';
+
+      return [
+        tipoVenta,
+        `Tipo de cliente: ${getTipoClienteLabel(clienteTipo)}`,
+        clienteTelefono ? clienteTelefono : '',
+        clienteEliminado ? 'Cliente eliminado del sistema' : ''
+      ].filter(Boolean).join(' · ');
+    }
+
+    function updateStockKpiVisual(count) {
+      if (!kpiInsumosCriticosCard) return;
+
+      kpiInsumosCriticosCard.classList.remove('kpi-ok', 'kpi-alert');
+
+      if (typeof count !== 'number' || Number.isNaN(count)) {
+        return;
+      }
+
+      if (count > 0) {
+        kpiInsumosCriticosCard.classList.add('kpi-alert');
+      } else {
+        kpiInsumosCriticosCard.classList.add('kpi-ok');
+      }
+    }
+
+    function getDayBounds(date = new Date()) {
+      const start = new Date(date);
+      start.setHours(0, 0, 0, 0);
+
+      const end = new Date(date);
+      end.setHours(23, 59, 59, 999);
+
+      return {
+        start: start.toISOString(),
+        end: end.toISOString()
+      };
+    }
+
+    function getMonthBounds(date = new Date()) {
+      const start = new Date(date.getFullYear(), date.getMonth(), 1, 0, 0, 0, 0);
+      const end = new Date(date.getFullYear(), date.getMonth() + 1, 0, 23, 59, 59, 999);
+
+      return {
+        start: start.toISOString(),
+        end: end.toISOString(),
+        startInput: formatDateOnly(start),
+        endInput: formatDateOnly(end)
+      };
+    }
+
+    function getPedidoTotalSeguro(pedido) {
+      const totalPedido = Number(pedido?.total_pedido ?? 0);
+      if (totalPedido > 0) return totalPedido;
+
+      const detalles = Array.isArray(pedido?.venta_detalles) ? pedido.venta_detalles : [];
+      return detalles.reduce((acc, item) => {
+        const subtotal = Number(item?.subtotal ?? 0);
+        if (subtotal > 0) return acc + subtotal;
+
+        const precioUnitario = Number(item?.precio_unitario_snapshot ?? 0);
+        const cantidad = Number(item?.cantidad ?? 0);
+        return acc + (precioUnitario * cantidad);
+      }, 0);
+    }
+
+    function renderDetalleChips(detalles) {
+      if (!Array.isArray(detalles) || !detalles.length) {
+        return '<span class="recipe-chip" style="opacity:.75;">Sin detalle de productos</span>';
+      }
+
+      return detalles.map(item => `
+        <span class="recipe-chip">${escapeHtml(item?.nombre_snapshot || 'Producto')} x${Number(item?.cantidad || 0)}</span>
+      `).join('');
+    }
+
+    function renderStockBajo(items) {
+      if (!items.length) {
+        stockBajoList.innerHTML = `
+          <div class="empty-state">
+            No hay productos comunes en stock bajo. Todo está dentro del mínimo definido.
+          </div>
+        `;
+        return;
+      }
+
+      stockBajoList.innerHTML = items.map((producto) => {
+        const actual = formatNumber(producto.cantidad);
+        const minimo = formatNumber(producto.stock_alert_min);
+
+        return `
+          <article class="history-card" data-role="go-insumos" style="cursor:pointer;">
+            <div class="history-card-top">
+              <div>
+                <h3>${escapeHtml(producto.nombre || 'Producto')}</h3>
+                <p>${escapeHtml(producto.detalles || producto.modelo || 'Sin descripción')}</p>
+              </div>
+              <div class="price-tag">
+                ${actual} / ${minimo}
+              </div>
+            </div>
+
+            <p class="history-note">
+              Stock actual: ${actual} · Stock mínimo: ${minimo}
+            </p>
+          </article>
+        `;
+      }).join('');
+    }
+
+    async function protectPage() {
+      const { data, error } = await supabaseClient.auth.getUser();
+
+      if (error || !data?.user) {
+        window.location.href = './login.html';
+        return;
+      }
+
+      userEmailEl.textContent = data.user.email || 'Usuario autenticado';
+    }
+
+    async function loadKPIs() {
+      const todayBounds = getDayBounds(new Date());
+      const monthBounds = getMonthBounds(new Date());
+
+      const [
+        { data: clientes, error: clientesError },
+        { data: pedidosAll, error: pedidosAllError },
+        { data: pedidosHoy, error: pedidosHoyError },
+        { data: pedidosMes, error: pedidosMesError },
+        { data: stockCritico, error: stockCriticoError }
+      ] = await Promise.all([
+        supabaseClient
+          .from('clientes')
+          .select('id'),
+
+        supabaseClient
+          .from('pedidos')
+          .select('id')
+          .is('deleted_at', null),
+
+        supabaseClient
+          .from('pedidos')
+          .select(`
+            id,
+            total_pedido,
+            venta_detalles (
+              cantidad,
+              precio_unitario_snapshot,
+              subtotal
+            )
+          `)
+          .is('deleted_at', null)
+          .gte('fecha_pedido', todayBounds.start)
+          .lte('fecha_pedido', todayBounds.end),
+
+        supabaseClient
+          .from('pedidos')
+          .select(`
+            id,
+            total_pedido,
+            venta_detalles (
+              cantidad,
+              precio_unitario_snapshot,
+              subtotal
+            )
+          `)
+          .is('deleted_at', null)
+          .gte('fecha_pedido', monthBounds.start)
+          .lte('fecha_pedido', monthBounds.end),
+
+        supabaseClient
+          .from('productos')
+          .select('id, cantidad, stock_alert_min, tipo_producto, es_activo')
+          .eq('tipo_producto', 'comun')
+          .eq('es_activo', true)
+      ]);
+
+      if (clientesError) console.error('Error clientes KPI:', clientesError);
+      if (pedidosAllError) console.error('Error pedidos KPI:', pedidosAllError);
+      if (pedidosHoyError) console.error('Error ventas hoy KPI:', pedidosHoyError);
+      if (pedidosMesError) console.error('Error ventas mes KPI:', pedidosMesError);
+      if (stockCriticoError) console.error('Error stock crítico KPI:', stockCriticoError);
+
+      const totalHoy = (pedidosHoy || []).reduce(
+        (acc, pedido) => acc + getPedidoTotalSeguro(pedido),
+        0
+      );
+      const totalMes = (pedidosMes || []).reduce(
+        (acc, pedido) => acc + getPedidoTotalSeguro(pedido),
+        0
+      );
+
+      const stockCriticosFiltrados = (stockCritico || []).filter((p) => {
+  if (!p) return false;
+  if (p.tipo_producto !== 'comun') return false;
+  if (p.es_activo !== true) return false;
+
+  const cantidad = Number(p.cantidad ?? 0);
+  const minimo = Number(p.stock_alert_min ?? 0);
+
+  if (!Number.isFinite(minimo) || minimo <= 0) return false;
+  if (!Number.isFinite(cantidad)) return false;
+
+  return cantidad <= minimo;
+});
+
+      const totalCriticos = stockCriticosFiltrados.length;
+
+      kpiClientes.textContent = clientes ? clientes.length : '--';
+      kpiPedidos.textContent = pedidosAll ? pedidosAll.length : '--';
+      kpiVentasHoy.textContent = soles(totalHoy);
+      kpiVentasMes.textContent = soles(totalMes);
+      kpiInsumosCriticos.textContent = stockCritico ? totalCriticos : '--';
+      updateStockKpiVisual(totalCriticos);
+
+      loadMargenHoy(todayBounds);
+    }
+
+    async function loadMargenHoy(todayBounds) {
+      try {
+        kpiMargenHoy.textContent = '--';
+        kpiMargenHoyNote.textContent = 'Calculando margen y costo de hoy…';
+
+        const { data, error } = await supabaseClient
+          .from('venta_detalles')
+          .select(`
+            cantidad,
+            precio_unitario_snapshot,
+            costo_unitario_snapshot,
+            subtotal,
+            utilidad_subtotal,
+            pedidos!inner (
+              fecha_pedido,
+              deleted_at
+            )
+          `)
+          .gte('pedidos.fecha_pedido', todayBounds.start)
+          .lte('pedidos.fecha_pedido', todayBounds.end)
+          .is('pedidos.deleted_at', null);
+
+        if (error) {
+          console.error('Error loadMargenHoy:', error);
+          kpiMargenHoy.textContent = 'Error';
+          kpiMargenHoyNote.textContent = 'No se pudo calcular el margen de hoy.';
+          return;
+        }
+
+        const detalles = data || [];
+
+        let venta = 0;
+        let costo = 0;
+        let margen = 0;
+
+        for (const d of detalles) {
+          const cantidad = Number(d.cantidad || 0);
+          const precio = Number(d.precio_unitario_snapshot || 0);
+          const costoUnit = d.costo_unitario_snapshot != null ? Number(d.costo_unitario_snapshot) : 0;
+
+          const sub = d.subtotal != null && !Number.isNaN(Number(d.subtotal))
+            ? Number(d.subtotal)
+            : precio * cantidad;
+
+          const util = d.utilidad_subtotal != null && !Number.isNaN(Number(d.utilidad_subtotal))
+            ? Number(d.utilidad_subtotal)
+            : (precio - costoUnit) * cantidad;
+
+          venta += sub;
+          costo += costoUnit * cantidad;
+          margen += util;
+        }
+
+        const margenPct = venta > 0 ? (margen / venta) * 100 : 0;
+
+        kpiMargenHoy.textContent = soles(margen);
+        kpiMargenHoyNote.textContent = `Venta: ${soles(venta)} · Costo: ${soles(costo)} · ${margenPct.toFixed(1)}% de margen`;
+      } catch (e) {
+        console.error('Error inesperado en loadMargenHoy:', e);
+        kpiMargenHoy.textContent = 'Error';
+        kpiMargenHoyNote.textContent = 'No se pudo calcular el margen de hoy.';
+      }
+    }
+
+    async function loadStockBajo() {
+      const { data, error } = await supabaseClient
+        .from('productos')
+        .select('id, nombre, detalles, modelo, cantidad, stock_alert_min, tipo_producto, es_activo')
+        .eq('tipo_producto', 'comun')
+        .eq('es_activo', true)
+        .order('cantidad', { ascending: true })
+        .limit(30);
+
+      if (error) {
+        console.error('Error loadStockBajo:', error);
+        stockBajoList.innerHTML = `<div class="empty-state">Error al cargar alertas de stock.</div>`;
+        kpiInsumosCriticos.textContent = '--';
+        updateStockKpiVisual(NaN);
+        return;
+      }
+
+      const items = (data || []).filter((p) => {
+        const cantidad = Number(p?.cantidad ?? 0);
+        const minimo = Number(p?.stock_alert_min ?? 0);
+        return cantidad <= minimo;
+      });
+
+      renderStockBajo(items.slice(0, 10));
+    }
+
+    async function loadPedidosHoy() {
+      const todayBounds = getDayBounds(new Date());
+
+      const { data, error } = await supabaseClient
+        .from('pedidos')
+        .select(`
+          id,
+          cliente_id,
+          fecha_pedido,
+          total_pedido,
+          notas,
+          tipo_venta,
+          cliente_nombre_snapshot,
+          cliente_tipo_snapshot,
+          cliente_telefono_snapshot,
+          deleted_at,
+          clientes (
+            nombres,
+            apellidos,
+            tipo_cliente,
+            telefono
+          ),
+          venta_detalles (
+            cantidad,
+            precio_unitario_snapshot,
+            subtotal,
+            nombre_snapshot
+          )
+        `)
+        .is('deleted_at', null)
+        .gte('fecha_pedido', todayBounds.start)
+        .lte('fecha_pedido', todayBounds.end)
+        .order('fecha_pedido', { ascending: false });
+
+      if (error) {
+        console.error('Error loadPedidosHoy:', error);
+        pedidosHoyList.innerHTML = `<div class="empty-state">Error al cargar ventas del día.</div>`;
+        pedidosHoyBadge.textContent = '0 ventas';
+        return;
+      }
+
+      const pedidosHoy = data || [];
+      pedidosHoyBadge.textContent = `${pedidosHoy.length} ventas`;
+
+      if (!pedidosHoy.length) {
+        pedidosHoyList.innerHTML = `<div class="empty-state">Hoy aún no hay ventas registradas.</div>`;
+        return;
+      }
+
+      pedidosHoyList.innerHTML = pedidosHoy.map(pedido => {
+        const cliente = getPedidoClienteNombre(pedido);
+        const detalles = Array.isArray(pedido.venta_detalles) ? pedido.venta_detalles : [];
+        const totalSeguro = getPedidoTotalSeguro(pedido);
+        const clienteMeta = renderClienteMeta(pedido);
+
+        return `
+          <article class="history-card">
+            <div class="history-card-top">
+              <div>
+                <h3>${escapeHtml(cliente)}</h3>
+                <p>${formatDateTime(pedido.fecha_pedido)}</p>
+              </div>
+              <div class="price-tag">${soles(totalSeguro)}</div>
+            </div>
+
+            <p class="history-note" style="margin-top:0; margin-bottom:8px;">
+              ${escapeHtml(clienteMeta)}
+            </p>
+
+            <div class="history-recipes">
+              ${renderDetalleChips(detalles)}
+            </div>
+
+            ${pedido.notas ? `<p class="history-note">${escapeHtml(pedido.notas)}</p>` : ''}
+          </article>
+        `;
+      }).join('');
+    }
+
+    async function loadPedidosRecientes() {
+      const { data, error } = await supabaseClient
+        .from('pedidos')
+        .select(`
+          id,
+          cliente_id,
+          fecha_pedido,
+          total_pedido,
+          notas,
+          tipo_venta,
+          cliente_nombre_snapshot,
+          cliente_tipo_snapshot,
+          cliente_telefono_snapshot,
+          deleted_at,
+          clientes (
+            nombres,
+            apellidos,
+            tipo_cliente,
+            telefono
+          ),
+          venta_detalles (
+            cantidad,
+            precio_unitario_snapshot,
+            subtotal,
+            nombre_snapshot
+          )
+        `)
+        .is('deleted_at', null)
+        .order('fecha_pedido', { ascending: false })
+        .limit(8);
+
+      if (error) {
+        console.error('Error loadPedidosRecientes:', error);
+        pedidosRecientesList.innerHTML = `<div class="empty-state">Error al cargar ventas recientes.</div>`;
+        return;
+      }
+
+      const pedidos = data || [];
+
+      if (!pedidos.length) {
+        pedidosRecientesList.innerHTML = `<div class="empty-state">Aún no hay ventas recientes.</div>`;
+        return;
+      }
+
+      pedidosRecientesList.innerHTML = pedidos.map(pedido => {
+        const cliente = getPedidoClienteNombre(pedido);
+        const detalles = Array.isArray(pedido.venta_detalles) ? pedido.venta_detalles : [];
+        const totalSeguro = getPedidoTotalSeguro(pedido);
+        const clienteMeta = renderClienteMeta(pedido);
+
+        return `
+          <article class="history-card">
+            <div class="history-card-top">
+              <div>
+                <h3>${escapeHtml(cliente)}</h3>
+                <p>${formatDateTime(pedido.fecha_pedido)}</p>
+              </div>
+              <div class="price-tag">${soles(totalSeguro)}</div>
+            </div>
+
+            <p class="history-note" style="margin-top:0; margin-bottom:8px;">
+              ${escapeHtml(clienteMeta)}
+            </p>
+
+            <div class="history-recipes">
+              ${renderDetalleChips(detalles)}
+            </div>
+
+            ${pedido.notas ? `<p class="history-note">${escapeHtml(pedido.notas)}</p>` : ''}
+          </article>
+        `;
+      }).join('');
+    }
+
+    async function loadVentasPorRango() {
+      const startDate = fechaInicioFiltro.value;
+      const endDate = fechaFinFiltro.value;
+
+      if (!startDate || !endDate) return;
+
+      const start = new Date(`${startDate}T00:00:00`);
+      const end = new Date(`${endDate}T23:59:59`);
+
+      const { data, error } = await supabaseClient
+        .from('pedidos')
+        .select(`
+          id,
+          total_pedido,
+          fecha_pedido,
+          deleted_at,
+          venta_detalles (
+            cantidad,
+            precio_unitario_snapshot,
+            subtotal
+          )
+        `)
+        .gte('fecha_pedido', start.toISOString())
+        .lte('fecha_pedido', end.toISOString())
+        .is('deleted_at', null)
+        .order('fecha_pedido', { ascending: false });
+
+      if (error) {
+        console.error('Error loadVentasPorRango:', error);
+        ventasRangoTotal.textContent = 'Error';
+        pedidosRangoTotal.textContent = '--';
+        ticketPromedioRango.textContent = '--';
+        return;
+      }
+
+      const pedidos = data || [];
+      const total = pedidos.reduce((acc, pedido) => acc + getPedidoTotalSeguro(pedido), 0);
+      const promedio = pedidos.length ? total / pedidos.length : 0;
+
+      ventasRangoTotal.textContent = soles(total);
+      pedidosRangoTotal.textContent = String(pedidos.length);
+      ticketPromedioRango.textContent = soles(promedio);
+    }
+
+    function goToPage(url) {
+      if (!url) return;
+
+      if (document.startViewTransition) {
+        document.startViewTransition(() => {
+          window.location.href = url;
+        });
+      } else {
+        window.location.href = url;
+      }
+    }
+
+    function setupRevealOnScroll() {
+      const items = document.querySelectorAll('.reveal-on-scroll');
+      if (!items.length) return;
+
+      const observer = new IntersectionObserver((entries) => {
+        entries.forEach((entry) => {
+          if (!entry.isIntersecting) return;
+          entry.target.classList.add('is-visible');
+          observer.unobserve(entry.target);
+        });
+      }, {
+        threshold: 0.12,
+        rootMargin: '0px 0px -40px 0px'
+      });
+
+      items.forEach((item) => observer.observe(item));
+    }
+
+    logoutBtn.addEventListener('click', async () => {
+      await supabaseClient.auth.signOut();
+      goToPage('./login.html');
+    });
+
+    document.querySelectorAll('.quick-link').forEach((btn) => {
+      btn.addEventListener('click', () => {
+        const link = btn.getAttribute('data-link');
+        if (link) goToPage(link);
+      });
+    });
+
+    if (verMargenesBtn) {
+      verMargenesBtn.addEventListener('click', () => {
+        goToPage('./margenes.html');
+      });
+    }
+
+    aplicarFiltroBtn.addEventListener('click', loadVentasPorRango);
+
+    resetFiltroBtn.addEventListener('click', async () => {
+      const monthBounds = getMonthBounds(new Date());
+      fechaInicioFiltro.value = monthBounds.startInput;
+      fechaFinFiltro.value = monthBounds.endInput;
+      await loadVentasPorRango();
+    });
+
+    if (stockAlertsCard) {
+      stockAlertsCard.addEventListener('click', () => {
+        goToPage('./ingredientes.html?stock_bajo=1');
+      });
+    }
+
+    if (stockBajoList) {
+      stockBajoList.addEventListener('click', (e) => {
+        const card = e.target.closest('[data-role="go-insumos"]');
+        if (!card) return;
+        e.stopPropagation();
+        goToPage('./ingredientes.html?stock_bajo=1');
+      });
+    }
+
+    (async () => {
+      await protectPage();
+
+      const monthBounds = getMonthBounds(new Date());
+      fechaInicioFiltro.value = monthBounds.startInput;
+      fechaFinFiltro.value = monthBounds.endInput;
+
+      await Promise.all([
+        loadKPIs(),
+        loadPedidosHoy(),
+        loadPedidosRecientes(),
+        loadVentasPorRango(),
+        loadStockBajo()
+      ]);
+
+      setupRevealOnScroll();
+    })();
+  </script>
+</body>
+</html>

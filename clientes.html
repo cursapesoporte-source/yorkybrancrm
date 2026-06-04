@@ -1,0 +1,804 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Clientes | YORKY CRM</title>
+  <link rel="stylesheet" href="./css/styles.css" />
+</head>
+<body>
+  <div class="brand-grain-bg" aria-hidden="true">
+    <div class="brand-grain-layer brand-grain-layer-one"></div>
+    <div class="brand-grain-layer brand-grain-layer-two"></div>
+    <div class="brand-grain-layer brand-grain-layer-three"></div>
+  </div>
+
+  <main class="clientes-page page-enter">
+    <div class="clientes-shell">
+      <header class="topbar page-enter-frag page-enter-frag-1">
+        <div class="brand-block">
+          <h1>Clientes</h1>
+          <p>Registra, busca y revisa el historial de personas y negocios de YORKY.</p>
+        </div>
+
+        <div class="topbar-actions">
+          <a
+            href="./dashboard.html"
+            class="dashboard-icon-btn"
+            title="Volver al dashboard"
+            aria-label="Volver al dashboard"
+            data-nav-link="./dashboard.html"
+          >
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+              <rect x="2" y="3" width="20" height="14" rx="2"></rect>
+              <line x1="8" y1="21" x2="16" y2="21"></line>
+              <line x1="12" y1="17" x2="12" y2="21"></line>
+            </svg>
+          </a>
+
+          <button id="logoutBtn" class="danger-btn" type="button">Cerrar sesión</button>
+        </div>
+      </header>
+
+      <section class="clientes-layout page-enter-frag page-enter-frag-2">
+        <article class="card form-card reveal-on-scroll reveal-delay-1">
+          <div class="section-title">
+            <h2 id="clienteFormTitle">Nuevo cliente</h2>
+            <p id="clienteFormSubtitle">Completa los datos básicos para registrarlo en la base privada.</p>
+          </div>
+
+          <form id="clienteForm">
+            <div style="margin-bottom: 14px;">
+              <span style="display:block; margin-bottom:8px; font-weight:600;">Tipo de cliente</span>
+
+              <div style="display:flex; gap:10px; flex-wrap:wrap;">
+                <label style="display:flex; align-items:center; gap:8px; cursor:pointer;">
+                  <input type="radio" name="tipo_cliente" value="persona" checked />
+                  <span>Persona</span>
+                </label>
+
+                <label style="display:flex; align-items:center; gap:8px; cursor:pointer;">
+                  <input type="radio" name="tipo_cliente" value="negocio" />
+                  <span>Negocio</span>
+                </label>
+              </div>
+            </div>
+
+            <label>
+              Nombres
+              <input type="text" id="nombres" required />
+            </label>
+
+            <label>
+              Apellidos
+              <input type="text" id="apellidos" placeholder="Opcional si es negocio" />
+            </label>
+
+            <label>
+              Teléfono
+              <input type="text" id="telefono" />
+            </label>
+
+            <label>
+              Correo electrónico
+              <input type="email" id="correo" placeholder="Opcional, ej. cliente@email.com" />
+            </label>
+
+            <label>
+              Notas
+              <textarea id="notas" placeholder="Dato útil del cliente, preferencia o referencia interna"></textarea>
+            </label>
+
+            <div class="form-actions">
+              <button type="submit" class="primary-btn" id="clienteSubmitBtn">Guardar cliente</button>
+              <button type="reset" class="secondary-btn" id="resetClienteForm">Limpiar</button>
+            </div>
+
+            <p id="clienteFormMessage" class="form-message"></p>
+          </form>
+        </article>
+
+        <article class="card reveal-on-scroll reveal-delay-2">
+          <div class="table-toolbar" style="align-items:flex-end; gap:14px; flex-wrap:wrap;">
+            <div>
+              <h2 style="margin-bottom:4px;">Base de clientes</h2>
+              <p style="color:var(--muted);">Busca por nombre, apellido, teléfono o notas y filtra por tipo.</p>
+            </div>
+
+            <div style="display:flex; gap:10px; flex-wrap:wrap; width:100%; justify-content:flex-end;">
+              <select id="filterTipoCliente" class="search-input" style="max-width:220px;">
+                <option value="todos">Todos</option>
+                <option value="persona">Solo personas</option>
+                <option value="negocio">Solo negocios</option>
+              </select>
+
+              <input
+                type="text"
+                id="searchClienteInput"
+                class="search-input"
+                placeholder="Buscar cliente..."
+                style="max-width:320px;"
+              />
+            </div>
+          </div>
+
+          <div class="clientes-list-shell">
+            <div id="clientesCardsList" class="clientes-cards-list">
+              <div class="empty-state">Cargando clientes...</div>
+            </div>
+          </div>
+        </article>
+      </section>
+    </div>
+  </main>
+
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <script src="./js/supabase.js"></script>
+
+  <script>
+    const supabaseClient = window.supabaseClient;
+
+    if (!supabaseClient) {
+      throw new Error('No se encontró window.supabaseClient. Verifica js/supabase.js');
+    }
+
+    const clienteForm = document.getElementById('clienteForm');
+    const clienteFormMessage = document.getElementById('clienteFormMessage');
+    const clienteFormTitle = document.getElementById('clienteFormTitle');
+    const clienteFormSubtitle = document.getElementById('clienteFormSubtitle');
+    const clienteSubmitBtn = document.getElementById('clienteSubmitBtn');
+
+    const clientesCardsList = document.getElementById('clientesCardsList');
+    const searchClienteInput = document.getElementById('searchClienteInput');
+    const filterTipoCliente = document.getElementById('filterTipoCliente');
+    const resetClienteForm = document.getElementById('resetClienteForm');
+    const logoutBtn = document.getElementById('logoutBtn');
+
+    let clientes = [];
+    let expandedClientId = null;
+    let clientStatsCache = new Map();
+    let clienteEditandoId = null;
+
+    function goToPage(url) {
+      if (!url) return;
+
+      if (document.startViewTransition) {
+        document.startViewTransition(() => {
+          window.location.href = url;
+        });
+      } else {
+        window.location.href = url;
+      }
+    }
+
+    function setupRevealOnScroll() {
+      const items = document.querySelectorAll('.reveal-on-scroll');
+      if (!items.length) return;
+
+      const observer = new IntersectionObserver((entries) => {
+        entries.forEach((entry) => {
+          if (!entry.isIntersecting) return;
+          entry.target.classList.add('is-visible');
+          observer.unobserve(entry.target);
+        });
+      }, {
+        threshold: 0.12,
+        rootMargin: '0px 0px -40px 0px'
+      });
+
+      items.forEach((item) => observer.observe(item));
+    }
+
+    async function protectPage() {
+      const { data, error } = await supabaseClient.auth.getUser();
+      if (error || !data?.user) {
+        goToPage('./login.html');
+      }
+    }
+
+    function formatDate(value) {
+      if (!value) return '-';
+      return new Date(value).toLocaleDateString('es-PE', {
+        day: '2-digit',
+        month: 'short',
+        year: 'numeric'
+      });
+    }
+
+    function formatDateTime(value) {
+      if (!value) return '-';
+      return new Date(value).toLocaleString('es-PE', {
+        dateStyle: 'medium',
+        timeStyle: 'short'
+      });
+    }
+
+    function soles(value) {
+      return `S/ ${Number(value || 0).toFixed(2)}`;
+    }
+
+    function escapeHtml(value) {
+      return String(value ?? '')
+        .replaceAll('&', '&amp;')
+        .replaceAll('<', '&lt;')
+        .replaceAll('>', '&gt;')
+        .replaceAll('"', '&quot;')
+        .replaceAll("'", '&#39;');
+    }
+
+    function getTipoClienteLabel(tipo) {
+      return tipo === 'negocio' ? 'Negocio' : 'Persona';
+    }
+
+    function getNombreCliente(cliente) {
+      const nombres = (cliente.nombres || '').trim();
+      const apellidos = (cliente.apellidos || '').trim();
+      return `${nombres} ${apellidos}`.trim() || 'Cliente sin nombre';
+    }
+
+    function getInitials(nombres, apellidos, tipoCliente = 'persona') {
+      const n = (nombres || '').trim().charAt(0);
+      const a = (apellidos || '').trim().charAt(0);
+
+      if (n || a) return `${n}${a}`.toUpperCase();
+      return tipoCliente === 'negocio' ? 'NG' : 'CL';
+    }
+
+    function getPedidoTotalSeguro(pedido) {
+      const totalPedido = Number(pedido?.totalpedido ?? 0);
+      if (totalPedido > 0) return totalPedido;
+
+      const detalles = Array.isArray(pedido?.pedidodetalles) ? pedido.pedidodetalles : [];
+      return detalles.reduce((acc, item) => {
+        const subtotal = Number(item?.subtotal ?? 0);
+        if (subtotal > 0) return acc + subtotal;
+
+        const precioUnitario = Number(item?.preciounitario ?? 0);
+        const cantidad = Number(item?.cantidad ?? 0);
+        return acc + (precioUnitario * cantidad);
+      }, 0);
+    }
+
+    async function fetchClientStats(clienteId) {
+  if (clientStatsCache.has(clienteId)) {
+    return clientStatsCache.get(clienteId);
+  }
+
+  const { data, error } = await supabaseClient
+    .from('pedidos')
+    .select(`
+      id,
+      fecha_pedido,
+      notas,
+      total_pedido,
+      tipo_venta,
+      deleted_at,
+      servicio_descripcion,
+      venta_detalles (
+        cantidad,
+        precio_unitario_snapshot,
+        subtotal,
+        nombre_snapshot
+      )
+    `)
+    .eq('cliente_id', clienteId)
+    .is('deleted_at', null)
+    .order('fecha_pedido', { ascending: false });
+
+  if (error) {
+    const fallback = {
+      error: error.message,
+      pedidosCount: 0,
+      totalGastado: 0,
+      ultimoPedido: null,
+      cafesFavoritos: [],
+      pedidos: []
+    };
+    clientStatsCache.set(clienteId, fallback);
+    return fallback;
+  }
+
+  const pedidos = data || [];
+  const pedidosCount = pedidos.length;
+  const totalGastado = pedidos.reduce(
+    (acc, pedido) => acc + Number(pedido?.total_pedido || 0),
+    0
+  );
+  const ultimoPedido = pedidos[0] || null;
+
+  const productoCounter = new Map();
+
+  pedidos.forEach((pedido) => {
+    (pedido.venta_detalles || []).forEach((detalle) => {
+      const nombreProducto = detalle?.nombre_snapshot || 'Producto';
+      const cantidad = Number(detalle?.cantidad || 0);
+      productoCounter.set(
+        nombreProducto,
+        (productoCounter.get(nombreProducto) || 0) + cantidad
+      );
+    });
+  });
+
+  const productosFavoritos = [...productoCounter.entries()]
+    .sort((a, b) => b[1] - a[1])
+    .slice(0, 4)
+    .map(([nombre, cantidad]) => ({ nombre, cantidad }));
+
+  const result = {
+    error: null,
+    pedidosCount,
+    totalGastado,
+    ultimoPedido,
+    cafesFavoritos: productosFavoritos,
+    pedidos: pedidos.slice(0, 5)
+  };
+
+  clientStatsCache.set(clienteId, result);
+  return result;
+}
+
+    function renderClienteStats(cliente, stats) {
+  if (!stats) {
+    return `
+      <div class="cliente-detail-loading">
+        Cargando ficha del cliente...
+      </div>
+    `;
+  }
+
+  if (stats.error) {
+    return `
+      <div class="cliente-detail-loading">
+        Error al cargar la ficha: ${escapeHtml(stats.error)}
+      </div>
+    `;
+  }
+
+  const visitasAcumuladas = Number(cliente.total_visitas || 0);
+  const pedidosCount = stats.pedidosCount;
+  const totalGastado = stats.totalGastado;
+  const ticketPromedio = pedidosCount ? totalGastado / pedidosCount : 0;
+
+  const productosHtml = stats.cafesFavoritos.length
+    ? stats.cafesFavoritos.map((producto) => `
+        <span class="recipe-chip">${escapeHtml(producto.nombre)} x${producto.cantidad}</span>
+      `).join('')
+    : '<span class="cliente-empty-inline">Aún no hay productos registrados.</span>';
+
+  const pedidosHtml = stats.pedidos.length
+    ? stats.pedidos.map((pedido) => {
+        const recetas = (pedido.venta_detalles || []).map((det) => `
+          <span class="recipe-chip">${escapeHtml(det?.nombre_snapshot || 'Producto')} x${det.cantidad}</span>
+        `).join('');
+
+        const totalSeguro = Number(pedido?.total_pedido || 0);
+
+        return `
+          <article class="cliente-mini-history-card">
+            <div class="cliente-mini-history-top">
+              <div>
+                <strong>${formatDateTime(pedido.fecha_pedido)}</strong>
+                <p>${pedido.notas ? escapeHtml(pedido.notas) : 'Sin nota adicional.'}</p>
+              </div>
+              <span class="price-tag">${soles(totalSeguro)}</span>
+            </div>
+            <div class="history-recipes">
+              ${recetas || '<span class="cliente-empty-inline">Sin detalle de productos.</span>'}
+            </div>
+          </article>
+        `;
+      }).join('')
+    : '<div class="cliente-detail-loading">Este cliente aún no tiene pedidos registrados.</div>';
+
+  return `
+    <div class="cliente-detail-grid">
+      <div class="cliente-stat-box">
+        <span>Tipo de cliente</span>
+        <strong>${escapeHtml(getTipoClienteLabel(cliente.tipo_cliente))}</strong>
+      </div>
+
+      <div class="cliente-stat-box">
+        <span>Visitas acumuladas</span>
+        <strong>${visitasAcumuladas}</strong>
+      </div>
+
+      <div class="cliente-stat-box">
+        <span>Pedidos registrados</span>
+        <strong>${pedidosCount}</strong>
+      </div>
+
+      <div class="cliente-stat-box">
+        <span>Monto total</span>
+        <strong>${soles(totalGastado)}</strong>
+      </div>
+
+      <div class="cliente-stat-box">
+        <span>Ticket promedio</span>
+        <strong>${soles(ticketPromedio)}</strong>
+      </div>
+
+      <div class="cliente-stat-box">
+        <span>Último pedido</span>
+        <strong>${stats.ultimoPedido ? formatDate(stats.ultimoPedido.fecha_pedido) : '-'}</strong>
+      </div>
+    </div>
+
+    <div class="cliente-detail-sections">
+      <section class="cliente-detail-block">
+        <h4>Productos más consumidos</h4>
+        <div class="history-recipes">
+          ${productosHtml}
+        </div>
+      </section>
+
+      <section class="cliente-detail-block">
+        <h4>Últimos pedidos</h4>
+        <div class="cliente-mini-history-list">
+          ${pedidosHtml}
+        </div>
+      </section>
+    </div>
+  `;
+}
+
+    async function expandClient(cliente) {
+      const detailEl = document.querySelector(`[data-detail-id="${cliente.id}"]`);
+      if (!detailEl) return;
+
+      detailEl.innerHTML = `
+        <div class="cliente-detail-loading">Cargando ficha del cliente...</div>
+      `;
+
+      const stats = await fetchClientStats(cliente.id);
+      detailEl.innerHTML = renderClienteStats(cliente, stats);
+    }
+
+    function renderClientes(list) {
+      if (!list.length) {
+        clientesCardsList.innerHTML = `
+          <div class="empty-state">No hay clientes registrados con ese criterio.</div>
+        `;
+        return;
+      }
+
+      clientesCardsList.innerHTML = list.map((cliente) => {
+        const isExpanded = expandedClientId === cliente.id;
+        const fullName = getNombreCliente(cliente);
+
+        return `
+          <article class="cliente-card-item reveal-on-scroll">
+            <div class="cliente-card-main">
+              <div class="cliente-card-identity">
+                <div class="cliente-avatar">${escapeHtml(getInitials(cliente.nombres, cliente.apellidos, cliente.tipocliente))}</div>
+
+                <div class="cliente-card-text">
+                  <h3>${escapeHtml(fullName)}</h3>
+                  <p>
+                    ${cliente.telefono ? escapeHtml(cliente.telefono) : 'Sin teléfono registrado'}
+                    ${cliente.correo ? `<br><span class="cliente-note-muted">${escapeHtml(cliente.correo)}</span>` : ''}
+                  </p>
+                </div>
+              </div>
+
+              <div class="cliente-card-meta" style="display:flex; gap:8px; flex-wrap:wrap; justify-content:flex-end;">
+                <span class="badge">${escapeHtml(getTipoClienteLabel(cliente.tipocliente))}</span>
+                <span class="cliente-date-pill">Alta: ${formatDate(cliente.createdat)}</span>
+              </div>
+            </div>
+
+            <div class="cliente-card-note">
+              ${cliente.notas
+                ? `<p>${escapeHtml(cliente.notas)}</p>`
+                : `<p class="cliente-note-muted">Sin notas internas.</p>`
+              }
+            </div>
+
+            <div class="cliente-card-actions-row">
+              <div style="display:flex; gap:8px; flex-wrap:wrap;">
+                <button
+                  type="button"
+                  class="secondary-btn mini-btn"
+                  data-role="toggle-cliente-detail"
+                  data-id="${cliente.id}"
+                >
+                  ${isExpanded ? 'Ocultar ficha' : 'Ver ficha'}
+                </button>
+
+                <button
+                  type="button"
+                  class="secondary-btn mini-btn"
+                  data-role="edit-cliente"
+                  data-id="${cliente.id}"
+                >
+                  Editar
+                </button>
+              </div>
+
+              <button
+                type="button"
+                class="delete-btn-icon"
+                title="Eliminar cliente"
+                data-role="delete-cliente"
+                data-id="${cliente.id}"
+              >
+                ×
+              </button>
+            </div>
+
+            <div class="cliente-detail-panel ${isExpanded ? 'is-open' : ''}" data-detail-id="${cliente.id}">
+              ${isExpanded ? renderClienteStats(cliente, clientStatsCache.get(cliente.id) || null) : ''}
+            </div>
+          </article>
+        `;
+      }).join('');
+
+      clientesCardsList.querySelectorAll('button[data-role="delete-cliente"]').forEach((btn) => {
+        btn.addEventListener('click', () => handleDeleteCliente(btn));
+      });
+
+      clientesCardsList.querySelectorAll('button[data-role="toggle-cliente-detail"]').forEach((btn) => {
+        btn.addEventListener('click', async () => {
+          const id = btn.getAttribute('data-id');
+          const wasExpanded = expandedClientId === id;
+
+          expandedClientId = wasExpanded ? null : id;
+          renderClientes(getFilteredClientes());
+
+          if (!wasExpanded && id) {
+            const cliente = clientes.find((c) => c.id === id);
+            if (cliente) await expandClient(cliente);
+          }
+        });
+      });
+
+      clientesCardsList.querySelectorAll('button[data-role="edit-cliente"]').forEach((btn) => {
+        btn.addEventListener('click', () => {
+          const id = btn.getAttribute('data-id');
+          const cliente = clientes.find((c) => c.id === id);
+          if (cliente) cargarClienteEnFormulario(cliente);
+        });
+      });
+
+      setupRevealOnScroll();
+    }
+
+    async function handleDeleteCliente(btn) {
+  const id = btn.getAttribute('data-id');
+  const cliente = clientes.find((c) => c.id === id);
+  const nombre = cliente ? getNombreCliente(cliente) : 'este cliente';
+
+  const confirmar = confirm(`¿Eliminar a ${nombre}? Esta acción no se puede deshacer.`);
+  if (!confirmar) return;
+
+  btn.disabled = true;
+
+  const { data, error } = await supabaseClient
+    .from('clientes')
+    .delete()
+    .eq('id', id)
+    .select();
+
+  console.log('DELETE clientes result =>', { id, data, error });
+
+  if (error) {
+    alert('Error al eliminar cliente: ' + error.message);
+    btn.disabled = false;
+    return;
+  }
+
+  if (!data || data.length === 0) {
+    alert('No se eliminó ninguna fila en Supabase. Revisa RLS/permisos o si estás apuntando al proyecto correcto.');
+    btn.disabled = false;
+    await loadClientes();
+    return;
+  }
+
+  clientStatsCache.delete(id);
+  clientes = clientes.filter((c) => c.id !== id);
+
+  if (expandedClientId === id) {
+    expandedClientId = null;
+  }
+
+  if (typeof clienteEditandoId !== 'undefined' && clienteEditandoId === id) {
+    resetModoEdicion();
+  }
+
+  renderClientes(getFilteredClientes());
+}
+
+    async function loadClientes() {
+      const { data, error } = await supabaseClient
+        .from('clientes')
+        .select('*')
+        .order('created_at', { ascending: false });
+
+      if (error) {
+        clientesCardsList.innerHTML = `
+          <div class="empty-state">Error al cargar clientes: ${escapeHtml(error.message)}</div>
+        `;
+        return;
+      }
+
+      clientes = data || [];
+      renderClientes(getFilteredClientes());
+    }
+
+    function getFilteredClientes() {
+      const term = searchClienteInput.value.trim().toLowerCase();
+      const tipo = filterTipoCliente.value;
+
+      return clientes.filter((cliente) => {
+        const nombres = (cliente.nombres || '').toLowerCase();
+        const apellidos = (cliente.apellidos || '').toLowerCase();
+        const telefono = (cliente.telefono || '').toLowerCase();
+        const correo = (cliente.correo || '').toLowerCase();
+        const notas = (cliente.notas || '').toLowerCase();
+        const tipoCliente = (cliente.tipocliente || 'persona').toLowerCase();
+
+        const matchesText =
+          !term ||
+          nombres.includes(term) ||
+          apellidos.includes(term) ||
+          telefono.includes(term) ||
+          correo.includes(term) ||
+          notas.includes(term);
+
+        const matchesTipo =
+          tipo === 'todos' ||
+          tipoCliente === tipo;
+
+        return matchesText && matchesTipo;
+      });
+    }
+
+    function cargarClienteEnFormulario(cliente) {
+      clienteEditandoId = cliente.id;
+
+      const radioPersona = document.querySelector('input[name="tipo_cliente"][value="persona"]');
+      const radioNegocio = document.querySelector('input[name="tipo_cliente"][value="negocio"]');
+
+      if (cliente.tipocliente === 'negocio') {
+        if (radioNegocio) radioNegocio.checked = true;
+      } else {
+        if (radioPersona) radioPersona.checked = true;
+      }
+
+      document.getElementById('nombres').value = cliente.nombres || '';
+      document.getElementById('apellidos').value = cliente.apellidos || '';
+      document.getElementById('telefono').value = cliente.telefono || '';
+      document.getElementById('correo').value = cliente.correo || '';
+      document.getElementById('notas').value = cliente.notas || '';
+
+      clienteFormTitle.textContent = 'Editar cliente';
+      clienteFormSubtitle.textContent = 'Modifica los datos del cliente y guarda los cambios.';
+      clienteSubmitBtn.textContent = 'Guardar cambios';
+      clienteFormMessage.textContent = '';
+    }
+
+    function resetModoEdicion() {
+      clienteEditandoId = null;
+      clienteFormTitle.textContent = 'Nuevo cliente';
+      clienteFormSubtitle.textContent = 'Completa los datos básicos para registrarlo en la base privada.';
+      clienteSubmitBtn.textContent = 'Guardar cliente';
+      clienteFormMessage.textContent = '';
+
+      const radioPersona = document.querySelector('input[name="tipo_cliente"][value="persona"]');
+      if (radioPersona) radioPersona.checked = true;
+    }
+
+    clienteForm.addEventListener('submit', async (e) => {
+      e.preventDefault();
+
+      const tipoCliente = document.querySelector('input[name="tipo_cliente"]:checked')?.value || 'persona';
+      const nombres = document.getElementById('nombres').value.trim();
+      const apellidos = document.getElementById('apellidos').value.trim();
+      const telefono = document.getElementById('telefono').value.trim();
+      const correo = document.getElementById('correo').value.trim();
+      const notas = document.getElementById('notas').value.trim();
+
+      if (!nombres) {
+        clienteFormMessage.textContent = 'Escribe al menos el nombre o razón principal del cliente.';
+        clienteFormMessage.style.color = '#c14646';
+        return;
+      }
+
+      if (tipoCliente === 'persona' && !apellidos) {
+        clienteFormMessage.textContent = 'Para una persona, completa también los apellidos.';
+        clienteFormMessage.style.color = '#c14646';
+        return;
+      }
+
+      clienteFormMessage.textContent = clienteEditandoId ? 'Guardando cambios...' : 'Guardando cliente...';
+      clienteFormMessage.style.color = '#7e7066';
+
+      const payload = {
+        tipocliente: tipoCliente,
+        nombres,
+        apellidos,
+        telefono,
+        correo,
+        notas
+      };
+
+      if (clienteEditandoId) {
+        const { error } = await supabaseClient
+          .from('clientes')
+          .update(payload)
+          .eq('id', clienteEditandoId);
+
+        if (error) {
+          clienteFormMessage.textContent = `Error al actualizar: ${error.message}`;
+          clienteFormMessage.style.color = '#c14646';
+          return;
+        }
+
+        clienteFormMessage.textContent = 'Cliente actualizado correctamente.';
+        clienteFormMessage.style.color = '#2f7d57';
+
+        clientes = clientes.map((c) => c.id === clienteEditandoId ? { ...c, ...payload } : c);
+        clientStatsCache.delete(clienteEditandoId);
+        renderClientes(getFilteredClientes());
+        clienteForm.reset();
+        resetModoEdicion();
+      } else {
+        const { data, error } = await supabaseClient
+          .from('clientes')
+          .insert([payload])
+          .select();
+
+        if (error) {
+          clienteFormMessage.textContent = `Error: ${error.message}`;
+          clienteFormMessage.style.color = '#c14646';
+          return;
+        }
+
+        clienteFormMessage.textContent = 'Cliente guardado correctamente.';
+        clienteFormMessage.style.color = '#2f7d57';
+        clienteForm.reset();
+        resetModoEdicion();
+
+        if (data?.length) {
+          clientes.unshift(data[0]);
+          renderClientes(getFilteredClientes());
+        } else {
+          await loadClientes();
+        }
+      }
+    });
+
+    searchClienteInput.addEventListener('input', () => {
+      renderClientes(getFilteredClientes());
+    });
+
+    filterTipoCliente.addEventListener('change', () => {
+      renderClientes(getFilteredClientes());
+    });
+
+    resetClienteForm.addEventListener('click', () => {
+      setTimeout(() => {
+        resetModoEdicion();
+      }, 0);
+    });
+
+    logoutBtn.addEventListener('click', async () => {
+      await supabaseClient.auth.signOut();
+      goToPage('./login.html');
+    });
+
+    document.querySelectorAll('[data-nav-link]').forEach((el) => {
+      el.addEventListener('click', (e) => {
+        e.preventDefault();
+        const url = el.getAttribute('data-nav-link');
+        goToPage(url);
+      });
+    });
+
+    (async () => {
+      await protectPage();
+      await loadClientes();
+      setupRevealOnScroll();
+    })();
+  </script>
+</body>
+</html>

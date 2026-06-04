@@ -1,0 +1,630 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Ventas | YORKY CRM</title>
+  <link rel="stylesheet" href="./css/styles.css" />
+</head>
+<body>
+  <div class="brand-grain-bg" aria-hidden="true">
+    <div class="brand-grain-layer brand-grain-layer-one"></div>
+    <div class="brand-grain-layer brand-grain-layer-two"></div>
+    <div class="brand-grain-layer brand-grain-layer-three"></div>
+  </div>
+
+  <main class="clientes-page dashboard-page">
+    <div class="clientes-shell dashboard-shell">
+      <header class="topbar">
+        <div class="brand-block">
+          <h1>Ventas</h1>
+          <p>
+            Revisa ventas de productos y servicios en un periodo personalizado, con su costo, margen, búsqueda y opción de exportar a CSV.
+          </p>
+        </div>
+
+        <div class="topbar-actions">
+          <a href="./dashboard.html" class="dashboard-icon-btn" title="Volver al dashboard" aria-label="Volver al dashboard">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+              <rect x="2" y="3" width="20" height="14" rx="2"></rect>
+              <line x1="8" y1="21" x2="16" y2="21"></line>
+              <line x1="12" y1="17" x2="12" y2="21"></line>
+            </svg>
+          </a>
+
+          <button id="logoutBtn" class="danger-btn" type="button">Cerrar sesión</button>
+        </div>
+      </header>
+
+      <section class="dashboard-grid">
+        <article class="card kpi-card wide-card" id="resumenVentasCard">
+          <div class="dashboard-panel-head">
+            <div>
+              <h2>Resumen de ventas</h2>
+              <p>Totales calculados según el rango de fechas seleccionado.</p>
+            </div>
+
+            <div class="dashboard-filter-actions" style="align-items:flex-end;">
+              <label>
+                Desde
+                <input type="date" id="fechaDesdeInput" />
+              </label>
+
+              <label>
+                Hasta
+                <input type="date" id="fechaHastaInput" />
+              </label>
+
+              <button type="button" class="secondary-btn mini-btn" id="hoyBtn">Hoy</button>
+              <button type="button" class="secondary-btn mini-btn" id="semanaBtn">Esta Semana</button>
+              <button type="button" class="secondary-btn mini-btn" id="mesBtn">Este Mes</button>
+              <button type="button" class="primary-btn" id="recargarBtn">Recargar</button>
+            </div>
+          </div>
+
+          <div class="sales-summary-grid">
+            <div class="sales-summary-box">
+              <span>Ventas (S/)</span>
+              <strong id="totalVentaText">S/ 0.00</strong>
+            </div>
+            <div class="sales-summary-box">
+              <span>Costo (S/)</span>
+              <strong id="totalCostoText">S/ 0.00</strong>
+            </div>
+            <div class="sales-summary-box">
+              <span>Margen (S/ y %)</span>
+              <strong id="totalMargenText">S/ 0.00 (0%)</strong>
+            </div>
+          </div>
+        </article>
+
+        <article class="card full-card">
+          <div class="table-toolbar" style="display:flex; gap:12px; justify-content:space-between; align-items:flex-start; flex-wrap:wrap;">
+            <div>
+              <h2 style="margin-bottom:4px;">Detalle de ventas</h2>
+              <p style="color:var(--muted);">
+                Cada fila representa un ítem vendido dentro del rango seleccionado, con su cantidad, precio, costo y margen.
+              </p>
+            </div>
+
+            <div style="display:flex; gap:10px; align-items:center; flex-wrap:wrap;">
+              <input
+                type="text"
+                id="searchVentasInput"
+                class="search-input"
+                placeholder="Buscar por cliente, producto, servicio..."
+              />
+              <button type="button" class="secondary-btn" id="exportCsvBtn">
+                Exportar CSV
+              </button>
+            </div>
+          </div>
+
+          <div class="table-wrap">
+            <table>
+              <thead>
+                <tr>
+                  <th>Fecha/Hora</th>
+                  <th>Cliente</th>
+                  <th>Tipo</th>
+                  <th>Detalle</th>
+                  <th>Cant.</th>
+                  <th>Precio unit.</th>
+                  <th>Costo unit.</th>
+                  <th>Subtotal</th>
+                  <th>Margen</th>
+                  <th>Acción</th>
+                </tr>
+              </thead>
+              <tbody id="ventasTableBody">
+                <tr>
+                  <td colspan="10" class="empty-state">Cargando ventas...</td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+        </article>
+      </section>
+    </div>
+  </main>
+
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <script src="./js/supabase.js"></script>
+
+  <script>
+    const supabaseClient = window.supabaseClient;
+    if (!supabaseClient) {
+      throw new Error('No se encontró window.supabaseClient. Verifica js/supabase.js');
+    }
+
+    const logoutBtn = document.getElementById('logoutBtn');
+
+    const fechaDesdeInput = document.getElementById('fechaDesdeInput');
+    const fechaHastaInput = document.getElementById('fechaHastaInput');
+
+    const hoyBtn = document.getElementById('hoyBtn');
+    const semanaBtn = document.getElementById('semanaBtn');
+    const mesBtn = document.getElementById('mesBtn');
+    const recargarBtn = document.getElementById('recargarBtn');
+
+    const totalVentaText = document.getElementById('totalVentaText');
+    const totalCostoText = document.getElementById('totalCostoText');
+    const totalMargenText = document.getElementById('totalMargenText');
+
+    const ventasTableBody = document.getElementById('ventasTableBody');
+    const searchVentasInput = document.getElementById('searchVentasInput');
+    const exportCsvBtn = document.getElementById('exportCsvBtn');
+
+    let ventasDetalleBruto = [];
+    let ventasMapeadas = [];
+    let ventasFiltradasActuales = [];
+    let isDeletingVenta = false;
+
+    async function protectPage() {
+      const { data, error } = await supabaseClient.auth.getUser();
+      if (error || !data?.user) {
+        window.location.href = './login.html';
+      }
+    }
+
+    function soles(value) {
+      return `S/ ${Number(value || 0).toFixed(2)}`;
+    }
+
+    function formatDateTime(value) {
+      if (!value) return '-';
+      return new Date(value).toLocaleString('es-PE', {
+        dateStyle: 'short',
+        timeStyle: 'short'
+      });
+    }
+
+    function toDateInputValue(date = new Date()) {
+      const pad = (n) => String(n).padStart(2, '0');
+      const y = date.getFullYear();
+      const m = pad(date.getMonth() + 1);
+      const d = pad(date.getDate());
+      return `${y}-${m}-${d}`;
+    }
+
+    function getClienteNombreFromPedido(pedido) {
+      if (pedido?.clientes) {
+        const live = `${pedido.clientes.nombres || ''} ${pedido.clientes.apellidos || ''}`.trim();
+        if (live) return live;
+      }
+      if (pedido?.cliente_nombre_snapshot) return pedido.cliente_nombre_snapshot;
+      return 'Sin cliente';
+    }
+
+    function getClienteTelefonoFromPedido(pedido) {
+      if (pedido?.clientes?.telefono) return pedido.clientes.telefono;
+      if (pedido?.cliente_telefono_snapshot) return pedido.cliente_telefono_snapshot;
+      return '';
+    }
+
+    function normalizarTexto(value) {
+      return (value || '').toString().trim().replace(/\s+/g, ' ');
+    }
+
+    function calcularResumen(filas) {
+      let totalVenta = 0;
+      let totalCosto = 0;
+
+      for (const f of filas) {
+        const subtotal = Number(f.subtotal || 0);
+        const costoTotal = Number(f.costo_total || 0);
+        totalVenta += subtotal;
+        totalCosto += costoTotal;
+      }
+
+      const margen = totalVenta - totalCosto;
+      const margenPct = totalVenta > 0 ? (margen / totalVenta) * 100 : 0;
+
+      totalVentaText.textContent = soles(totalVenta);
+      totalCostoText.textContent = soles(totalCosto);
+      totalMargenText.textContent = `${soles(margen)} (${margenPct.toFixed(1)}%)`;
+    }
+
+    function renderTabla(filas) {
+      if (!filas.length) {
+        ventasTableBody.innerHTML = `
+          <tr>
+            <td colspan="10" class="empty-state">No hay ventas para el rango seleccionado.</td>
+          </tr>
+        `;
+        return;
+      }
+
+      ventasTableBody.innerHTML = filas.map((f) => `
+        <tr>
+          <td>${f.fecha_hora_legible}</td>
+          <td>
+            <strong>${normalizarTexto(f.cliente_nombre)}</strong>
+            ${f.cliente_telefono ? `<br /><span style="color:var(--muted); font-size:.9rem;">${f.cliente_telefono}</span>` : ''}
+          </td>
+          <td>${f.tipo_venta}</td>
+          <td>${normalizarTexto(f.detalle)}</td>
+          <td>${f.cantidad}</td>
+          <td>${soles(f.precio_unitario)}</td>
+          <td>${f.costo_unitario ? soles(f.costo_unitario) : '-'}</td>
+          <td>${soles(f.subtotal)}</td>
+          <td>${soles(f.margen)}</td>
+          <td>
+            <button
+              type="button"
+              class="delete-btn-icon"
+              title="Eliminar venta"
+              aria-label="Eliminar venta"
+              data-role="delete-venta"
+              data-id="${f.pedido_id}"
+            >
+              ×
+            </button>
+          </td>
+        </tr>
+      `).join('');
+
+      ventasTableBody.querySelectorAll('[data-role="delete-venta"]').forEach((btn) => {
+        btn.addEventListener('click', () => handleDeleteVenta(btn));
+      });
+    }
+
+    function aplicarFiltroTexto() {
+      const term = searchVentasInput.value.trim().toLowerCase();
+      const words = term ? term.split(/\s+/).filter(Boolean) : [];
+
+      if (!words.length) {
+        ventasFiltradasActuales = [...ventasMapeadas];
+        renderTabla(ventasFiltradasActuales);
+        calcularResumen(ventasFiltradasActuales);
+        return;
+      }
+
+      ventasFiltradasActuales = ventasMapeadas.filter((f) => {
+        const blob = [
+          f.fecha_hora_legible || '',
+          f.cliente_nombre || '',
+          f.cliente_telefono || '',
+          f.tipo_venta || '',
+          f.detalle || ''
+        ].join(' ').toLowerCase();
+
+        return words.every((w) => blob.includes(w));
+      });
+
+      renderTabla(ventasFiltradasActuales);
+      calcularResumen(ventasFiltradasActuales);
+    }
+
+    function mapearVentasParaUI() {
+      const filas = [];
+
+      for (const pedido of ventasDetalleBruto) {
+        const detalles = Array.isArray(pedido.venta_detalles) ? pedido.venta_detalles : [];
+        const clienteNombre = getClienteNombreFromPedido(pedido);
+        const clienteTelefono = getClienteTelefonoFromPedido(pedido);
+        const tipoVenta = pedido.tipo_venta || 'producto';
+
+        if (tipoVenta === 'servicio' && !detalles.length) {
+          const subtotalServicio = Number(pedido.total_pedido || 0);
+
+          filas.push({
+            pedido_id: pedido.id,
+            fecha_pedido: pedido.fecha_pedido,
+            fecha_hora_legible: formatDateTime(pedido.fecha_pedido),
+            cliente_nombre: clienteNombre,
+            cliente_telefono: clienteTelefono,
+            tipo_venta: 'Servicio',
+            detalle: pedido.servicio_descripcion || 'Servicio',
+            cantidad: 1,
+            precio_unitario: subtotalServicio,
+            costo_unitario: 0,
+            subtotal: subtotalServicio,
+            costo_total: 0,
+            margen: subtotalServicio
+          });
+
+          continue;
+        }
+
+        for (const det of detalles) {
+          const cantidad = Number(det.cantidad || 0);
+          const precioUnit = Number(det.precio_unitario_snapshot || 0);
+          const costoUnit = det.costo_unitario_snapshot != null ? Number(det.costo_unitario_snapshot) : 0;
+          const subtotal = det.subtotal != null && !Number.isNaN(Number(det.subtotal))
+            ? Number(det.subtotal)
+            : precioUnit * cantidad;
+          const margen = det.utilidad_subtotal != null && !Number.isNaN(Number(det.utilidad_subtotal))
+            ? Number(det.utilidad_subtotal)
+            : (precioUnit - costoUnit) * cantidad;
+
+          filas.push({
+            pedido_id: pedido.id,
+            fecha_pedido: pedido.fecha_pedido,
+            fecha_hora_legible: formatDateTime(pedido.fecha_pedido),
+            cliente_nombre: clienteNombre,
+            cliente_telefono: clienteTelefono,
+            tipo_venta: tipoVenta === 'servicio' ? 'Servicio' : 'Productos',
+            detalle: det.nombre_snapshot || pedido.servicio_descripcion || 'Producto/Servicio',
+            cantidad,
+            precio_unitario: precioUnit,
+            costo_unitario: costoUnit,
+            subtotal,
+            costo_total: costoUnit * cantidad,
+            margen
+          });
+        }
+      }
+
+      ventasMapeadas = filas;
+      ventasFiltradasActuales = [...filas];
+    }
+
+    function getDayBounds(date = new Date()) {
+      const start = new Date(date);
+      start.setHours(0, 0, 0, 0);
+
+      const end = new Date(date);
+      end.setHours(23, 59, 59, 999);
+
+      return { start, end };
+    }
+
+    function getWeekBounds(date = new Date()) {
+      const base = new Date(date);
+      base.setHours(0, 0, 0, 0);
+
+      const day = base.getDay();
+      const diffToMonday = day === 0 ? -6 : 1 - day;
+
+      const start = new Date(base);
+      start.setDate(base.getDate() + diffToMonday);
+      start.setHours(0, 0, 0, 0);
+
+      const end = new Date(start);
+      end.setDate(start.getDate() + 6);
+      end.setHours(23, 59, 59, 999);
+
+      return { start, end };
+    }
+
+    function getMonthBounds(date = new Date()) {
+      const start = new Date(date.getFullYear(), date.getMonth(), 1, 0, 0, 0, 0);
+      const end = new Date(date.getFullYear(), date.getMonth() + 1, 0, 23, 59, 59, 999);
+      return { start, end };
+    }
+
+    function setRangeInputs(start, end) {
+      fechaDesdeInput.value = toDateInputValue(start);
+      fechaHastaInput.value = toDateInputValue(end);
+    }
+
+    function getCurrentRangeFromInputs() {
+      const desde = fechaDesdeInput.value;
+      const hasta = fechaHastaInput.value;
+
+      if (!desde || !hasta) return null;
+
+      const start = new Date(`${desde}T00:00:00`);
+      const end = new Date(`${hasta}T23:59:59.999`);
+
+      if (Number.isNaN(start.getTime()) || Number.isNaN(end.getTime())) {
+        return null;
+      }
+
+      return { start, end };
+    }
+
+    async function cargarVentasPorRango(startDate, endDate) {
+      ventasTableBody.innerHTML = `
+        <tr>
+          <td colspan="10" class="empty-state">Cargando ventas...</td>
+        </tr>
+      `;
+
+      const { data, error } = await supabaseClient
+        .from('pedidos')
+        .select(`
+          id,
+          fecha_pedido,
+          total_pedido,
+          tipo_venta,
+          servicio_descripcion,
+          cliente_nombre_snapshot,
+          cliente_telefono_snapshot,
+          deleted_at,
+          clientes (
+            nombres,
+            apellidos,
+            telefono
+          ),
+          venta_detalles (
+            cantidad,
+            precio_unitario_snapshot,
+            costo_unitario_snapshot,
+            subtotal,
+            utilidad_subtotal,
+            nombre_snapshot
+          )
+        `)
+        .gte('fecha_pedido', startDate.toISOString())
+        .lte('fecha_pedido', endDate.toISOString())
+        .is('deleted_at', null)
+        .order('fecha_pedido', { ascending: true });
+
+      if (error) {
+        ventasTableBody.innerHTML = `
+          <tr>
+            <td colspan="10" class="empty-state">Error al cargar ventas: ${error.message}</td>
+          </tr>
+        `;
+        totalVentaText.textContent = 'S/ 0.00';
+        totalCostoText.textContent = 'S/ 0.00';
+        totalMargenText.textContent = 'S/ 0.00 (0%)';
+        ventasDetalleBruto = [];
+        ventasMapeadas = [];
+        ventasFiltradasActuales = [];
+        return;
+      }
+
+      ventasDetalleBruto = data || [];
+      mapearVentasParaUI();
+      aplicarFiltroTexto();
+    }
+
+    async function recargarRangoActual() {
+      const range = getCurrentRangeFromInputs();
+      if (!range) return;
+      await cargarVentasPorRango(range.start, range.end);
+    }
+
+    async function handleDeleteVenta(btn) {
+      if (isDeletingVenta) return;
+
+      const ventaId = btn.getAttribute('data-id');
+      if (!ventaId) return;
+
+      const confirmar = confirm('¿Eliminar esta venta? Esta acción no se puede deshacer.');
+      if (!confirmar) return;
+
+      isDeletingVenta = true;
+      btn.disabled = true;
+
+      const { error } = await supabaseClient
+        .from('pedidos')
+        .update({ deleted_at: new Date().toISOString() })
+        .eq('id', ventaId);
+
+      if (error) {
+        alert(`Error al eliminar venta: ${error.message}`);
+        btn.disabled = false;
+        isDeletingVenta = false;
+        return;
+      }
+
+      await recargarRangoActual();
+      isDeletingVenta = false;
+    }
+
+    function descargarCsv(filas) {
+      if (!filas.length) {
+        alert('No hay datos para exportar.');
+        return;
+      }
+
+      const sepLine = 'sep=;\n';
+
+      const header = [
+        'Fecha/Hora',
+        'Cliente',
+        'Teléfono',
+        'Tipo de venta',
+        'Detalle',
+        'Cantidad',
+        'Precio unitario',
+        'Costo unitario',
+        'Subtotal',
+        'Costo total',
+        'Margen'
+      ];
+
+      const rows = filas.map((f) => [
+        f.fecha_hora_legible,
+        normalizarTexto(f.cliente_nombre),
+        f.cliente_telefono || '',
+        f.tipo_venta,
+        normalizarTexto(f.detalle),
+        f.cantidad,
+        Number(f.precio_unitario || 0).toFixed(2),
+        f.costo_unitario ? Number(f.costo_unitario || 0).toFixed(2) : '',
+        Number(f.subtotal || 0).toFixed(2),
+        Number(f.costo_total || 0).toFixed(2),
+        Number(f.margen || 0).toFixed(2)
+      ]);
+
+      const esc = (v) => {
+        if (v == null) return '';
+        const s = String(v);
+        if (s.includes('"') || s.includes(';') || s.includes('\n')) {
+          return '"' + s.replace(/"/g, '""') + '"';
+        }
+        return s;
+      };
+
+      const csvLines = [
+        header.map(esc).join(';'),
+        ...rows.map((r) => r.map(esc).join(';'))
+      ];
+
+      const csvContent = sepLine + csvLines.join('\n');
+      const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+      const url = URL.createObjectURL(blob);
+
+      const a = document.createElement('a');
+      const desde = fechaDesdeInput.value || toDateInputValue(new Date());
+      const hasta = fechaHastaInput.value || toDateInputValue(new Date());
+
+      a.href = url;
+      a.download = `ventas_${desde}_a_${hasta}.csv`;
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+      URL.revokeObjectURL(url);
+    }
+
+    searchVentasInput.addEventListener('input', aplicarFiltroTexto);
+
+    exportCsvBtn.addEventListener('click', () => {
+      aplicarFiltroTexto();
+      descargarCsv(ventasFiltradasActuales);
+    });
+
+    hoyBtn.addEventListener('click', async () => {
+      const { start, end } = getDayBounds(new Date());
+      setRangeInputs(start, end);
+      await cargarVentasPorRango(start, end);
+    });
+
+    semanaBtn.addEventListener('click', async () => {
+      const { start, end } = getWeekBounds(new Date());
+      setRangeInputs(start, end);
+      await cargarVentasPorRango(start, end);
+    });
+
+    mesBtn.addEventListener('click', async () => {
+      const { start, end } = getMonthBounds(new Date());
+      setRangeInputs(start, end);
+      await cargarVentasPorRango(start, end);
+    });
+
+    recargarBtn.addEventListener('click', async () => {
+      const range = getCurrentRangeFromInputs();
+
+      if (!range) {
+        alert('Selecciona un rango válido de fechas.');
+        return;
+      }
+
+      if (range.start > range.end) {
+        alert('La fecha "Desde" no puede ser mayor que la fecha "Hasta".');
+        return;
+      }
+
+      await cargarVentasPorRango(range.start, range.end);
+    });
+
+    logoutBtn.addEventListener('click', async () => {
+      await supabaseClient.auth.signOut();
+      window.location.href = './login.html';
+    });
+
+    (async () => {
+      await protectPage();
+
+      const { start, end } = getDayBounds(new Date());
+      setRangeInputs(start, end);
+      await cargarVentasPorRango(start, end);
+    })();
+  </script>
+</body>
+</html>
