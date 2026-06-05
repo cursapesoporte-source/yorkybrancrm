@@ -244,202 +244,194 @@
       return tipoCliente === 'negocio' ? 'NG' : 'CL';
     }
 
-    function getPedidoTotalSeguro(pedido) {
-      const totalPedido = Number(pedido?.totalpedido ?? 0);
-      if (totalPedido > 0) return totalPedido;
-
-      const detalles = Array.isArray(pedido?.pedidodetalles) ? pedido.pedidodetalles : [];
-      return detalles.reduce((acc, item) => {
-        const subtotal = Number(item?.subtotal ?? 0);
-        if (subtotal > 0) return acc + subtotal;
-
-        const precioUnitario = Number(item?.preciounitario ?? 0);
-        const cantidad = Number(item?.cantidad ?? 0);
-        return acc + (precioUnitario * cantidad);
-      }, 0);
+    function setFormMessage(text, color = '#7e7066') {
+      clienteFormMessage.textContent = text;
+      clienteFormMessage.style.color = color;
     }
 
     async function fetchClientStats(clienteId) {
-  if (clientStatsCache.has(clienteId)) {
-    return clientStatsCache.get(clienteId);
-  }
+      if (clientStatsCache.has(clienteId)) {
+        return clientStatsCache.get(clienteId);
+      }
 
-  const { data, error } = await supabaseClient
-    .from('pedidos')
-    .select(`
-      id,
-      fecha_pedido,
-      notas,
-      total_pedido,
-      tipo_venta,
-      deleted_at,
-      servicio_descripcion,
-      venta_detalles (
-        cantidad,
-        precio_unitario_snapshot,
-        subtotal,
-        nombre_snapshot
-      )
-    `)
-    .eq('cliente_id', clienteId)
-    .is('deleted_at', null)
-    .order('fecha_pedido', { ascending: false });
+      const { data, error } = await supabaseClient
+        .from('pedidos')
+        .select(`
+          id,
+          fecha_pedido,
+          notas,
+          total_pedido,
+          tipo_venta,
+          deleted_at,
+          servicio_descripcion,
+          venta_detalles (
+            cantidad,
+            precio_unitario_snapshot,
+            subtotal,
+            nombre_snapshot
+          )
+        `)
+        .eq('cliente_id', clienteId)
+        .is('deleted_at', null)
+        .order('fecha_pedido', { ascending: false });
 
-  if (error) {
-    const fallback = {
-      error: error.message,
-      pedidosCount: 0,
-      totalGastado: 0,
-      ultimoPedido: null,
-      cafesFavoritos: [],
-      pedidos: []
-    };
-    clientStatsCache.set(clienteId, fallback);
-    return fallback;
-  }
+      if (error) {
+        const fallback = {
+          error: error.message,
+          pedidosCount: 0,
+          totalGastado: 0,
+          ultimoPedido: null,
+          productosFavoritos: [],
+          pedidos: []
+        };
+        clientStatsCache.set(clienteId, fallback);
+        return fallback;
+      }
 
-  const pedidos = data || [];
-  const pedidosCount = pedidos.length;
-  const totalGastado = pedidos.reduce(
-    (acc, pedido) => acc + Number(pedido?.total_pedido || 0),
-    0
-  );
-  const ultimoPedido = pedidos[0] || null;
+      const pedidos = data || [];
+      const pedidosCount = pedidos.length;
 
-  const productoCounter = new Map();
+      const totalGastado = pedidos.reduce((acc, pedido) => {
+        return acc + Number(pedido?.total_pedido || 0);
+      }, 0);
 
-  pedidos.forEach((pedido) => {
-    (pedido.venta_detalles || []).forEach((detalle) => {
-      const nombreProducto = detalle?.nombre_snapshot || 'Producto';
-      const cantidad = Number(detalle?.cantidad || 0);
-      productoCounter.set(
-        nombreProducto,
-        (productoCounter.get(nombreProducto) || 0) + cantidad
-      );
-    });
-  });
+      const ultimoPedido = pedidos[0] || null;
 
-  const productosFavoritos = [...productoCounter.entries()]
-    .sort((a, b) => b[1] - a[1])
-    .slice(0, 4)
-    .map(([nombre, cantidad]) => ({ nombre, cantidad }));
+      const productoCounter = new Map();
 
-  const result = {
-    error: null,
-    pedidosCount,
-    totalGastado,
-    ultimoPedido,
-    cafesFavoritos: productosFavoritos,
-    pedidos: pedidos.slice(0, 5)
-  };
+      pedidos.forEach((pedido) => {
+        (pedido.venta_detalles || []).forEach((detalle) => {
+          const nombreProducto = detalle?.nombre_snapshot || 'Producto';
+          const cantidad = Number(detalle?.cantidad || 0);
 
-  clientStatsCache.set(clienteId, result);
-  return result;
-}
+          productoCounter.set(
+            nombreProducto,
+            (productoCounter.get(nombreProducto) || 0) + cantidad
+          );
+        });
+      });
+
+      const productosFavoritos = [...productoCounter.entries()]
+        .sort((a, b) => b[1] - a[1])
+        .slice(0, 4)
+        .map(([nombre, cantidad]) => ({ nombre, cantidad }));
+
+      const result = {
+        error: null,
+        pedidosCount,
+        totalGastado,
+        ultimoPedido,
+        productosFavoritos,
+        pedidos: pedidos.slice(0, 5)
+      };
+
+      clientStatsCache.set(clienteId, result);
+      return result;
+    }
 
     function renderClienteStats(cliente, stats) {
-  if (!stats) {
-    return `
-      <div class="cliente-detail-loading">
-        Cargando ficha del cliente...
-      </div>
-    `;
-  }
-
-  if (stats.error) {
-    return `
-      <div class="cliente-detail-loading">
-        Error al cargar la ficha: ${escapeHtml(stats.error)}
-      </div>
-    `;
-  }
-
-  const visitasAcumuladas = Number(cliente.total_visitas || 0);
-  const pedidosCount = stats.pedidosCount;
-  const totalGastado = stats.totalGastado;
-  const ticketPromedio = pedidosCount ? totalGastado / pedidosCount : 0;
-
-  const productosHtml = stats.cafesFavoritos.length
-    ? stats.cafesFavoritos.map((producto) => `
-        <span class="recipe-chip">${escapeHtml(producto.nombre)} x${producto.cantidad}</span>
-      `).join('')
-    : '<span class="cliente-empty-inline">Aún no hay productos registrados.</span>';
-
-  const pedidosHtml = stats.pedidos.length
-    ? stats.pedidos.map((pedido) => {
-        const recetas = (pedido.venta_detalles || []).map((det) => `
-          <span class="recipe-chip">${escapeHtml(det?.nombre_snapshot || 'Producto')} x${det.cantidad}</span>
-        `).join('');
-
-        const totalSeguro = Number(pedido?.total_pedido || 0);
-
+      if (!stats) {
         return `
-          <article class="cliente-mini-history-card">
-            <div class="cliente-mini-history-top">
-              <div>
-                <strong>${formatDateTime(pedido.fecha_pedido)}</strong>
-                <p>${pedido.notas ? escapeHtml(pedido.notas) : 'Sin nota adicional.'}</p>
-              </div>
-              <span class="price-tag">${soles(totalSeguro)}</span>
-            </div>
-            <div class="history-recipes">
-              ${recetas || '<span class="cliente-empty-inline">Sin detalle de productos.</span>'}
-            </div>
-          </article>
+          <div class="cliente-detail-loading">
+            Cargando ficha del cliente...
+          </div>
         `;
-      }).join('')
-    : '<div class="cliente-detail-loading">Este cliente aún no tiene pedidos registrados.</div>';
+      }
 
-  return `
-    <div class="cliente-detail-grid">
-      <div class="cliente-stat-box">
-        <span>Tipo de cliente</span>
-        <strong>${escapeHtml(getTipoClienteLabel(cliente.tipo_cliente))}</strong>
-      </div>
+      if (stats.error) {
+        return `
+          <div class="cliente-detail-loading">
+            Error al cargar la ficha: ${escapeHtml(stats.error)}
+          </div>
+        `;
+      }
 
-      <div class="cliente-stat-box">
-        <span>Visitas acumuladas</span>
-        <strong>${visitasAcumuladas}</strong>
-      </div>
+      const visitasAcumuladas = Number(cliente.total_visitas || 0);
+      const pedidosCount = stats.pedidosCount;
+      const totalGastado = stats.totalGastado;
+      const ticketPromedio = pedidosCount ? totalGastado / pedidosCount : 0;
 
-      <div class="cliente-stat-box">
-        <span>Pedidos registrados</span>
-        <strong>${pedidosCount}</strong>
-      </div>
+      const productosHtml = stats.productosFavoritos.length
+        ? stats.productosFavoritos.map((producto) => `
+            <span class="recipe-chip">${escapeHtml(producto.nombre)} x${producto.cantidad}</span>
+          `).join('')
+        : '<span class="cliente-empty-inline">Aún no hay productos registrados.</span>';
 
-      <div class="cliente-stat-box">
-        <span>Monto total</span>
-        <strong>${soles(totalGastado)}</strong>
-      </div>
+      const pedidosHtml = stats.pedidos.length
+        ? stats.pedidos.map((pedido) => {
+            const recetas = (pedido.venta_detalles || []).map((det) => `
+              <span class="recipe-chip">${escapeHtml(det?.nombre_snapshot || 'Producto')} x${det.cantidad}</span>
+            `).join('');
 
-      <div class="cliente-stat-box">
-        <span>Ticket promedio</span>
-        <strong>${soles(ticketPromedio)}</strong>
-      </div>
+            const totalSeguro = Number(pedido?.total_pedido || 0);
 
-      <div class="cliente-stat-box">
-        <span>Último pedido</span>
-        <strong>${stats.ultimoPedido ? formatDate(stats.ultimoPedido.fecha_pedido) : '-'}</strong>
-      </div>
-    </div>
+            return `
+              <article class="cliente-mini-history-card">
+                <div class="cliente-mini-history-top">
+                  <div>
+                    <strong>${formatDateTime(pedido.fecha_pedido)}</strong>
+                    <p>${pedido.notas ? escapeHtml(pedido.notas) : 'Sin nota adicional.'}</p>
+                  </div>
+                  <span class="price-tag">${soles(totalSeguro)}</span>
+                </div>
+                <div class="history-recipes">
+                  ${recetas || '<span class="cliente-empty-inline">Sin detalle de productos.</span>'}
+                </div>
+              </article>
+            `;
+          }).join('')
+        : '<div class="cliente-detail-loading">Este cliente aún no tiene pedidos registrados.</div>';
 
-    <div class="cliente-detail-sections">
-      <section class="cliente-detail-block">
-        <h4>Productos más consumidos</h4>
-        <div class="history-recipes">
-          ${productosHtml}
+      return `
+        <div class="cliente-detail-grid">
+          <div class="cliente-stat-box">
+            <span>Tipo de cliente</span>
+            <strong>${escapeHtml(getTipoClienteLabel(cliente.tipo_cliente))}</strong>
+          </div>
+
+          <div class="cliente-stat-box">
+            <span>Visitas acumuladas</span>
+            <strong>${visitasAcumuladas}</strong>
+          </div>
+
+          <div class="cliente-stat-box">
+            <span>Pedidos registrados</span>
+            <strong>${pedidosCount}</strong>
+          </div>
+
+          <div class="cliente-stat-box">
+            <span>Monto total</span>
+            <strong>${soles(totalGastado)}</strong>
+          </div>
+
+          <div class="cliente-stat-box">
+            <span>Ticket promedio</span>
+            <strong>${soles(ticketPromedio)}</strong>
+          </div>
+
+          <div class="cliente-stat-box">
+            <span>Último pedido</span>
+            <strong>${stats.ultimoPedido ? formatDate(stats.ultimoPedido.fecha_pedido) : '-'}</strong>
+          </div>
         </div>
-      </section>
 
-      <section class="cliente-detail-block">
-        <h4>Últimos pedidos</h4>
-        <div class="cliente-mini-history-list">
-          ${pedidosHtml}
+        <div class="cliente-detail-sections">
+          <section class="cliente-detail-block">
+            <h4>Productos más consumidos</h4>
+            <div class="history-recipes">
+              ${productosHtml}
+            </div>
+          </section>
+
+          <section class="cliente-detail-block">
+            <h4>Últimos pedidos</h4>
+            <div class="cliente-mini-history-list">
+              ${pedidosHtml}
+            </div>
+          </section>
         </div>
-      </section>
-    </div>
-  `;
-}
+      `;
+    }
 
     async function expandClient(cliente) {
       const detailEl = document.querySelector(`[data-detail-id="${cliente.id}"]`);
@@ -469,7 +461,7 @@
           <article class="cliente-card-item reveal-on-scroll">
             <div class="cliente-card-main">
               <div class="cliente-card-identity">
-                <div class="cliente-avatar">${escapeHtml(getInitials(cliente.nombres, cliente.apellidos, cliente.tipocliente))}</div>
+                <div class="cliente-avatar">${escapeHtml(getInitials(cliente.nombres, cliente.apellidos, cliente.tipo_cliente))}</div>
 
                 <div class="cliente-card-text">
                   <h3>${escapeHtml(fullName)}</h3>
@@ -481,8 +473,8 @@
               </div>
 
               <div class="cliente-card-meta" style="display:flex; gap:8px; flex-wrap:wrap; justify-content:flex-end;">
-                <span class="badge">${escapeHtml(getTipoClienteLabel(cliente.tipocliente))}</span>
-                <span class="cliente-date-pill">Alta: ${formatDate(cliente.createdat)}</span>
+                <span class="badge">${escapeHtml(getTipoClienteLabel(cliente.tipo_cliente))}</span>
+                <span class="cliente-date-pill">Alta: ${formatDate(cliente.created_at)}</span>
               </div>
             </div>
 
@@ -563,49 +555,49 @@
     }
 
     async function handleDeleteCliente(btn) {
-  const id = btn.getAttribute('data-id');
-  const cliente = clientes.find((c) => c.id === id);
-  const nombre = cliente ? getNombreCliente(cliente) : 'este cliente';
+      const id = btn.getAttribute('data-id');
+      const cliente = clientes.find((c) => c.id === id);
+      const nombre = cliente ? getNombreCliente(cliente) : 'este cliente';
 
-  const confirmar = confirm(`¿Eliminar a ${nombre}? Esta acción no se puede deshacer.`);
-  if (!confirmar) return;
+      const confirmar = confirm(`¿Eliminar a ${nombre}? Esta acción no se puede deshacer.`);
+      if (!confirmar) return;
 
-  btn.disabled = true;
+      btn.disabled = true;
 
-  const { data, error } = await supabaseClient
-    .from('clientes')
-    .delete()
-    .eq('id', id)
-    .select();
+      const { data, error } = await supabaseClient
+        .from('clientes')
+        .delete()
+        .eq('id', id)
+        .select();
 
-  console.log('DELETE clientes result =>', { id, data, error });
+      console.log('DELETE clientes result =>', { id, data, error });
 
-  if (error) {
-    alert('Error al eliminar cliente: ' + error.message);
-    btn.disabled = false;
-    return;
-  }
+      if (error) {
+        alert('Error al eliminar cliente: ' + error.message);
+        btn.disabled = false;
+        return;
+      }
 
-  if (!data || data.length === 0) {
-    alert('No se eliminó ninguna fila en Supabase. Revisa RLS/permisos o si estás apuntando al proyecto correcto.');
-    btn.disabled = false;
-    await loadClientes();
-    return;
-  }
+      if (!data || data.length === 0) {
+        alert('No se eliminó ninguna fila en Supabase. Revisa RLS/permisos o si estás apuntando al proyecto correcto.');
+        btn.disabled = false;
+        await loadClientes();
+        return;
+      }
 
-  clientStatsCache.delete(id);
-  clientes = clientes.filter((c) => c.id !== id);
+      clientStatsCache.delete(id);
+      clientes = clientes.filter((c) => c.id !== id);
 
-  if (expandedClientId === id) {
-    expandedClientId = null;
-  }
+      if (expandedClientId === id) {
+        expandedClientId = null;
+      }
 
-  if (typeof clienteEditandoId !== 'undefined' && clienteEditandoId === id) {
-    resetModoEdicion();
-  }
+      if (clienteEditandoId === id) {
+        resetModoEdicion();
+      }
 
-  renderClientes(getFilteredClientes());
-}
+      renderClientes(getFilteredClientes());
+    }
 
     async function loadClientes() {
       const { data, error } = await supabaseClient
@@ -634,7 +626,7 @@
         const telefono = (cliente.telefono || '').toLowerCase();
         const correo = (cliente.correo || '').toLowerCase();
         const notas = (cliente.notas || '').toLowerCase();
-        const tipoCliente = (cliente.tipocliente || 'persona').toLowerCase();
+        const tipoCliente = (cliente.tipo_cliente || 'persona').toLowerCase();
 
         const matchesText =
           !term ||
@@ -658,7 +650,7 @@
       const radioPersona = document.querySelector('input[name="tipo_cliente"][value="persona"]');
       const radioNegocio = document.querySelector('input[name="tipo_cliente"][value="negocio"]');
 
-      if (cliente.tipocliente === 'negocio') {
+      if (cliente.tipo_cliente === 'negocio') {
         if (radioNegocio) radioNegocio.checked = true;
       } else {
         if (radioPersona) radioPersona.checked = true;
@@ -698,22 +690,19 @@
       const notas = document.getElementById('notas').value.trim();
 
       if (!nombres) {
-        clienteFormMessage.textContent = 'Escribe al menos el nombre o razón principal del cliente.';
-        clienteFormMessage.style.color = '#c14646';
+        setFormMessage('Escribe al menos el nombre o razón principal del cliente.', '#c14646');
         return;
       }
 
       if (tipoCliente === 'persona' && !apellidos) {
-        clienteFormMessage.textContent = 'Para una persona, completa también los apellidos.';
-        clienteFormMessage.style.color = '#c14646';
+        setFormMessage('Para una persona, completa también los apellidos.', '#c14646');
         return;
       }
 
-      clienteFormMessage.textContent = clienteEditandoId ? 'Guardando cambios...' : 'Guardando cliente...';
-      clienteFormMessage.style.color = '#7e7066';
+      setFormMessage(clienteEditandoId ? 'Guardando cambios...' : 'Guardando cliente...', '#7e7066');
 
       const payload = {
-        tipocliente: tipoCliente,
+        tipo_cliente: tipoCliente,
         nombres,
         apellidos,
         telefono,
@@ -728,13 +717,11 @@
           .eq('id', clienteEditandoId);
 
         if (error) {
-          clienteFormMessage.textContent = `Error al actualizar: ${error.message}`;
-          clienteFormMessage.style.color = '#c14646';
+          setFormMessage(`Error al actualizar: ${error.message}`, '#c14646');
           return;
         }
 
-        clienteFormMessage.textContent = 'Cliente actualizado correctamente.';
-        clienteFormMessage.style.color = '#2f7d57';
+        setFormMessage('Cliente actualizado correctamente.', '#2f7d57');
 
         clientes = clientes.map((c) => c.id === clienteEditandoId ? { ...c, ...payload } : c);
         clientStatsCache.delete(clienteEditandoId);
@@ -748,13 +735,11 @@
           .select();
 
         if (error) {
-          clienteFormMessage.textContent = `Error: ${error.message}`;
-          clienteFormMessage.style.color = '#c14646';
+          setFormMessage(`Error: ${error.message}`, '#c14646');
           return;
         }
 
-        clienteFormMessage.textContent = 'Cliente guardado correctamente.';
-        clienteFormMessage.style.color = '#2f7d57';
+        setFormMessage('Cliente guardado correctamente.', '#2f7d57');
         clienteForm.reset();
         resetModoEdicion();
 
