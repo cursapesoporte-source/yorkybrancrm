@@ -351,8 +351,8 @@ main {
 }
 
 .form-card {
-  position: sticky;
-  top: 24px;
+  position: static;
+  top: auto;
 }
 
 /* TÃ­tulos y formularios */

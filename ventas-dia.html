@@ -5,6 +5,22 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>Ventas | YORKY CRM</title>
   <link rel="stylesheet" href="./css/styles.css" />
+  <style>
+    .receipt-modal { position: fixed; inset: 0; background: rgba(17,24,39,.65); display:none; align-items:center; justify-content:center; z-index: 9999; padding: 18px; }
+    .receipt-modal.is-open { display:flex; }
+    .receipt-panel { width: min(920px, 100%); max-height: 92vh; overflow: auto; background: #fff; border-radius: 22px; box-shadow: 0 24px 80px rgba(0,0,0,.25); padding: 18px; }
+    .receipt-top { display:flex; align-items:flex-start; justify-content:space-between; gap: 12px; margin-bottom: 12px; }
+    .receipt-actions { display:flex; gap:10px; flex-wrap:wrap; }
+    .receipt-canvas-wrap { background: #f8fafc; border-radius: 18px; padding: 12px; }
+    .receipt-hint { color: var(--muted); font-size: .92rem; }
+    .action-btn-icon { width: 34px; height: 34px; display:inline-flex; align-items:center; justify-content:center; border-radius: 999px; border: 1px solid rgba(0,0,0,.08); background: #f1f5f9; cursor:pointer; }
+    .action-btn-icon svg { width: 18px; height: 18px; }
+    .action-btn-icon:hover { transform: translateY(-1px); }
+    .table-action-cell { display:flex; gap:8px; align-items:center; justify-content:center; }
+    .receipt-legend { display:flex; gap:12px; flex-wrap:wrap; color: var(--muted); font-size: .92rem; margin-top: 8px; }
+    .receipt-legend span { display:inline-flex; align-items:center; gap:6px; }
+    .legend-dot { width:10px; height:10px; border-radius:999px; background:#dbeafe; border:1px solid #60a5fa; }
+  </style>
 </head>
 <body>
   <div class="brand-grain-bg" aria-hidden="true">
@@ -128,6 +144,28 @@
     </div>
   </main>
 
+  <div id="receiptModal" class="receipt-modal" aria-hidden="true">
+    <div class="receipt-panel">
+      <div class="receipt-top">
+        <div>
+          <h2 style="margin-bottom:4px;">Boleta / Ticket</h2>
+          <p class="receipt-hint">Descarga la imagen para guardarla o enviarla al cliente.</p>
+        </div>
+        <div class="receipt-actions">
+          <button type="button" class="secondary-btn" id="downloadReceiptBtn">Descargar JPG</button>
+          <button type="button" class="secondary-btn" id="closeReceiptBtn">Cerrar</button>
+        </div>
+      </div>
+      <div class="receipt-canvas-wrap">
+        <canvas id="receiptCanvas" style="width:100%; height:auto; display:block; border-radius:16px; background:#fff;"></canvas>
+      </div>
+      <div class="receipt-legend">
+        <span><i class="legend-dot"></i> Incluye fondo grain y logo de YORKY.</span>
+        <span>Formato JPG listo para guardar o compartir.</span>
+      </div>
+    </div>
+  </div>
+
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
   <script src="./js/supabase.js"></script>
 
@@ -155,6 +193,14 @@
     const searchVentasInput = document.getElementById('searchVentasInput');
     const exportCsvBtn = document.getElementById('exportCsvBtn');
 
+    const receiptModal = document.getElementById('receiptModal');
+    const receiptCanvas = document.getElementById('receiptCanvas');
+    const closeReceiptBtn = document.getElementById('closeReceiptBtn');
+    const downloadReceiptBtn = document.getElementById('downloadReceiptBtn');
+    const logoSrc = './assets/logo-yorky.png';
+    const grainSrc = './assets/grain-yorky.png';
+
+    let currentReceipt = null;
     let ventasDetalleBruto = [];
     let ventasMapeadas = [];
     let ventasFiltradasActuales = [];
@@ -250,22 +296,48 @@
           <td>${soles(f.subtotal)}</td>
           <td>${soles(f.margen)}</td>
           <td>
-            <button
-              type="button"
-              class="delete-btn-icon"
-              title="Eliminar venta"
-              aria-label="Eliminar venta"
-              data-role="delete-venta"
-              data-id="${f.pedido_id}"
-            >
-              ×
-            </button>
+            <div class="table-action-cell">
+              <button
+                type="button"
+                class="action-btn-icon"
+                title="Generar boleta"
+                aria-label="Generar boleta"
+                data-role="receipt"
+                data-id="${f.pedido_id}"
+              >
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                  <path d="M7 3h8l4 4v14H7z"></path>
+                  <path d="M15 3v4h4"></path>
+                  <path d="M9 12h6"></path>
+                  <path d="M9 16h6"></path>
+                </svg>
+              </button>
+
+              <button
+                type="button"
+                class="delete-btn-icon"
+                title="Eliminar venta"
+                aria-label="Eliminar venta"
+                data-role="delete-venta"
+                data-id="${f.pedido_id}"
+              >
+                ×
+              </button>
+            </div>
           </td>
         </tr>
       `).join('');
 
       ventasTableBody.querySelectorAll('[data-role="delete-venta"]').forEach((btn) => {
         btn.addEventListener('click', () => handleDeleteVenta(btn));
+      });
+
+      ventasTableBody.querySelectorAll('[data-role="receipt"]').forEach((btn) => {
+        btn.addEventListener('click', () => {
+          const id = btn.getAttribute('data-id');
+          const row = ventasDetalleBruto.find((p) => String(p.id) === String(id));
+          if (row) openReceipt(row);
+        });
       });
     }
 
@@ -430,6 +502,7 @@
           total_pedido,
           tipo_venta,
           servicio_descripcion,
+          boleta_numero,
           cliente_nombre_snapshot,
           cliente_telefono_snapshot,
           deleted_at,
@@ -572,6 +645,228 @@
       URL.revokeObjectURL(url);
     }
 
+    function openReceipt(pedido) {
+      currentReceipt = pedido;
+      drawReceipt(pedido);
+      receiptModal.classList.add('is-open');
+      receiptModal.setAttribute('aria-hidden', 'false');
+    }
+
+    function closeReceipt() {
+      receiptModal.classList.remove('is-open');
+      receiptModal.setAttribute('aria-hidden', 'true');
+      currentReceipt = null;
+    }
+
+    function getReceiptRows(pedido) {
+      const detalles = Array.isArray(pedido.venta_detalles) ? pedido.venta_detalles : [];
+      const cliente = getClienteNombreFromPedido(pedido);
+      const tipo = pedido.tipo_venta || 'producto';
+      const fecha = formatDateTime(pedido.fecha_pedido);
+      const rows = [];
+
+      if (tipo === 'servicio' && !detalles.length) {
+        rows.push({
+          fecha,
+          cliente,
+          tipo: 'Servicio',
+          detalle: pedido.servicio_descripcion || 'Servicio',
+          cantidad: 1,
+          precio: Number(pedido.total_pedido || 0),
+          subtotal: Number(pedido.total_pedido || 0)
+        });
+        return rows;
+      }
+
+      for (const det of detalles) {
+        const qty = Number(det.cantidad || 0);
+        const price = Number(det.precio_unitario_snapshot || 0);
+        const subtotal = Number(det.subtotal || 0) || (price * qty);
+        rows.push({
+          fecha,
+          cliente,
+          tipo: tipo === 'servicio' ? 'Servicio' : 'Producto',
+          detalle: det.nombre_snapshot || pedido.servicio_descripcion || 'Producto',
+          cantidad: qty,
+          precio: price,
+          subtotal
+        });
+      }
+
+      return rows;
+    }
+
+    async function drawReceipt(pedido) {
+      const canvas = receiptCanvas;
+      const dpr = window.devicePixelRatio || 1;
+      const w = 1240;
+      const h = 1754;
+
+      canvas.width = w * dpr;
+      canvas.height = h * dpr;
+      canvas.style.width = '100%';
+      canvas.style.height = 'auto';
+
+      const ctx = canvas.getContext('2d');
+      ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+      ctx.clearRect(0, 0, w, h);
+      ctx.fillStyle = '#ffffff';
+      ctx.fillRect(0, 0, w, h);
+
+      const loadImg = (src) => new Promise((resolve) => {
+        const img = new Image();
+        img.onload = () => resolve(img);
+        img.onerror = () => resolve(null);
+        img.src = src;
+      });
+
+      const [logoImg, grainImg] = await Promise.all([loadImg(logoSrc), loadImg(grainSrc)]);
+
+      if (grainImg) {
+        ctx.save();
+        ctx.globalAlpha = 0.08;
+        for (let y = 0; y < h; y += 380) {
+          for (let x = 0; x < w; x += 380) {
+            ctx.drawImage(grainImg, x, y, 380, 380);
+          }
+        }
+        ctx.restore();
+      }
+
+      ctx.save();
+      ctx.globalAlpha = 0.06;
+      ctx.font = 'bold 56px Arial';
+      ctx.fillStyle = '#94a3b8';
+      for (let y = 60; y < h; y += 220) {
+        for (let x = -80; x < w + 160; x += 260) {
+          ctx.save();
+          ctx.translate(x, y);
+          ctx.rotate(-Math.PI / 10);
+          ctx.fillText('YORKY', 0, 0);
+          ctx.restore();
+        }
+      }
+      ctx.restore();
+
+      const rows = getReceiptRows(pedido);
+      const margin = 88;
+      const left = margin;
+      const right = w - margin;
+      let y = 90;
+
+      if (logoImg) {
+        const maxW = 180;
+        const maxH = 110;
+        const ratio = Math.min(maxW / logoImg.width, maxH / logoImg.height);
+        const drawW = logoImg.width * ratio;
+        const drawH = logoImg.height * ratio;
+        const x = w - margin - drawW;
+        const yLogo = 48;
+        ctx.drawImage(logoImg, x, yLogo, drawW, drawH);
+      }
+
+      ctx.font = '18px Arial';
+      ctx.fillStyle = '#64748b';
+      ctx.fillText('Boleta / Ticket de venta', left, y + 30);
+
+      ctx.fillStyle = '#0f172a';
+      ctx.font = 'bold 18px Arial';
+      ctx.fillText('Fecha/Hora', left, y + 95);
+      ctx.fillText('Cliente', left + 340, y + 95);
+      ctx.fillText('Tipo', left + 760, y + 95);
+      y += 122;
+
+      ctx.strokeStyle = '#dbe4ef';
+      ctx.lineWidth = 1;
+      ctx.beginPath();
+      ctx.moveTo(left, y);
+      ctx.lineTo(right, y);
+      ctx.stroke();
+
+      y += 42;
+
+      const first = rows[0] || {};
+      ctx.font = '20px Arial';
+      ctx.fillStyle = '#111827';
+      ctx.fillText(first.fecha || formatDateTime(pedido.fecha_pedido), left, y);
+      ctx.fillText(first.cliente || getClienteNombreFromPedido(pedido), left + 340, y);
+      ctx.fillText(first.tipo || (pedido.tipo_venta === 'servicio' ? 'Servicio' : 'Producto'), left + 760, y);
+
+      y += 72;
+      ctx.fillStyle = '#0f172a';
+      ctx.font = 'bold 18px Arial';
+      ctx.fillText('Detalle', left, y);
+      ctx.fillText('Cantidad', left + 700, y);
+      ctx.fillText('Precio unit.', left + 820, y);
+      ctx.fillText('Subtotal', left + 1040, y);
+
+      y += 18;
+      ctx.beginPath();
+      ctx.moveTo(left, y);
+      ctx.lineTo(right, y);
+      ctx.stroke();
+      y += 38;
+
+      ctx.font = '18px Arial';
+
+      for (const row of rows) {
+        const wrap = (text, maxWidth) => {
+          const words = String(text).split(' ');
+          let line = '';
+          const lines = [];
+
+          for (const word of words) {
+            const testLine = line ? `${line} ${word}` : word;
+            if (ctx.measureText(testLine).width > maxWidth && line) {
+              lines.push(line);
+              line = word;
+            } else {
+              line = testLine;
+            }
+          }
+
+          if (line) lines.push(line);
+          return lines;
+        };
+
+        const detailLines = wrap(row.detalle, 560);
+        ctx.fillStyle = '#111827';
+        detailLines.forEach((line, idx) => ctx.fillText(line, left, y + idx * 24));
+        ctx.fillText(String(row.cantidad ?? 1), left + 700, y);
+        ctx.fillText(soles(row.precio), left + 820, y);
+        ctx.fillText(soles(row.subtotal), left + 1040, y);
+        y += Math.max(34, detailLines.length * 24 + 10);
+        if (y > h - 250) break;
+      }
+
+      y = h - 250;
+      ctx.strokeStyle = '#dbe4ef';
+      ctx.beginPath();
+      ctx.moveTo(left, y);
+      ctx.lineTo(right, y);
+      ctx.stroke();
+
+      y += 45;
+      ctx.font = 'bold 24px Arial';
+      ctx.fillStyle = '#0f172a';
+      ctx.fillText('Total', left, y);
+      ctx.fillText(soles(Number(pedido.total_pedido || 0)), right - 220, y);
+
+      y += 70;
+      ctx.font = '16px Arial';
+      ctx.fillStyle = '#64748b';
+      ctx.fillText(`Boleta: ${pedido.boleta_numero || '-'}`, left, y);
+      ctx.fillText(`Fecha generada: ${new Date().toLocaleString('es-PE')}`, left, y + 28);
+    }
+
+    function downloadReceiptJpg() {
+      if (!currentReceipt) return;
+      const a = document.createElement('a');
+      a.download = `boleta_${(currentReceipt.boleta_numero || currentReceipt.id).toString().replace(/[^a-zA-Z0-9_-]+/g, '_')}.jpg`;
+      a.href = receiptCanvas.toDataURL('image/jpeg', 0.95);
+      a.click();
+    }
+
     searchVentasInput.addEventListener('input', aplicarFiltroTexto);
 
     exportCsvBtn.addEventListener('click', () => {
@@ -616,6 +911,18 @@
     logoutBtn.addEventListener('click', async () => {
       await supabaseClient.auth.signOut();
       window.location.href = './login.html';
+    });
+
+    closeReceiptBtn.addEventListener('click', closeReceipt);
+    downloadReceiptBtn.addEventListener('click', downloadReceiptJpg);
+    receiptModal.addEventListener('click', (e) => {
+      if (e.target === receiptModal) closeReceipt();
+    });
+
+    window.addEventListener('resize', () => {
+      if (receiptModal.classList.contains('is-open') && currentReceipt) {
+        drawReceipt(currentReceipt);
+      }
     });
 
     (async () => {
