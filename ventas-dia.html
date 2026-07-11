@@ -502,7 +502,6 @@
           total_pedido,
           tipo_venta,
           servicio_descripcion,
-          boleta_numero,
           cliente_nombre_snapshot,
           cliente_telefono_snapshot,
           deleted_at,
@@ -656,6 +655,10 @@
       receiptModal.classList.remove('is-open');
       receiptModal.setAttribute('aria-hidden', 'true');
       currentReceipt = null;
+    }
+
+    function getReceiptCode(pedido) {
+      return pedido?.boleta_numero || `V-${pedido?.id || 'SIN-ID'}`;
     }
 
     function getReceiptRows(pedido) {
@@ -855,14 +858,14 @@
       y += 70;
       ctx.font = '16px Arial';
       ctx.fillStyle = '#64748b';
-      ctx.fillText(`Boleta: ${pedido.boleta_numero || '-'}`, left, y);
+      ctx.fillText(`Boleta: ${getReceiptCode(pedido)}`, left, y);
       ctx.fillText(`Fecha generada: ${new Date().toLocaleString('es-PE')}`, left, y + 28);
     }
 
     function downloadReceiptJpg() {
       if (!currentReceipt) return;
       const a = document.createElement('a');
-      a.download = `boleta_${(currentReceipt.boleta_numero || currentReceipt.id).toString().replace(/[^a-zA-Z0-9_-]+/g, '_')}.jpg`;
+      a.download = `boleta_${getReceiptCode(currentReceipt).toString().replace(/[^a-zA-Z0-9_-]+/g, '_')}.jpg`;
       a.href = receiptCanvas.toDataURL('image/jpeg', 0.95);
       a.click();
     }
