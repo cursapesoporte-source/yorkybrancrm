@@ -2,7 +2,7 @@ document.addEventListener('DOMContentLoaded', () => {
   const loginForm = document.getElementById('loginForm');
   const loginMessage = document.getElementById('loginMessage');
 
-  const LICENSE_CHECK_URL = 'https://qthfmtwwvivscqankscx.supabase.co/functions/v1/license-check-proxy';
+  const LICENSE_CHECK_URL = 'https://vhyzutexodnktpstlgoi.supabase.co/functions/v1/license-check-proxy';
 
   function setMessage(text, color = '#555') {
     if (!loginMessage) return;
